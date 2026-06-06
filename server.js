@@ -250,6 +250,50 @@ app.post('/api/questions/reorder', requireMonitor, (req, res) => {
   res.json({ ok: true });
 });
 
+// ── Backup / Restore completo ────────────────────────────
+// Exporta todas as questões com as imagens embutidas (base64)
+// para que o backup seja auto-suficiente, independente de onde
+// os arquivos estejam no servidor.
+app.get('/api/backup', requireMonitor, (req, res) => {
+  const questions = db.prepare(`
+    SELECT id, position, image_url, image_data, filename,
+           pin_x, pin_y, answer, notes, module_id
+    FROM questions ORDER BY position ASC, id ASC
+  `).all();
+
+  const modules = db.prepare('SELECT * FROM modules ORDER BY position ASC').all();
+
+  const enriched = questions.map(q => {
+    let imageBase64 = q.image_data || '';
+
+    // Se a imagem é um arquivo, lê e converte para base64
+    if (q.image_url && q.image_url.startsWith('/uploads/')) {
+      const filepath = path.join(UPLOADS_DIR, path.basename(q.image_url));
+      try {
+        const buf = fs.readFileSync(filepath);
+        const ext = path.extname(q.image_url).replace('.', '') || 'jpg';
+        const mime = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+        imageBase64 = `data:${mime};base64,${buf.toString('base64')}`;
+      } catch {}
+    }
+
+    return {
+      filename:  q.filename,
+      image_data: imageBase64,
+      pin_x:     q.pin_x,
+      pin_y:     q.pin_y,
+      answer:    q.answer,
+      notes:     q.notes,
+      module_id: q.module_id,
+    };
+  });
+
+  const stamp = new Date().toISOString().slice(0, 10);
+  res.setHeader('Content-Disposition', `attachment; filename="backup-anatomia-${stamp}.json"`);
+  res.setHeader('Content-Type', 'application/json');
+  res.json({ version: 3, createdAt: new Date().toISOString(), modules, questions: enriched });
+});
+
 // ── Páginas ───────────────────────────────────────────────
 ['painel', 'simulacao', 'login'].forEach(page => {
   app.get(`/${page}`, (_, res) =>

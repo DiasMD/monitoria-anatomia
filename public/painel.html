@@ -1169,24 +1169,23 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ===== EXPORT / IMPORT / CLEAR =====
-$('exportBtn').addEventListener('click', () => {
+$('exportBtn').addEventListener('click', async () => {
   if (!state.questions.length) { toast('Nada para exportar.'); return; }
-  const payload = {
-    version: 2,
-    createdAt: new Date().toISOString(),
-    timePerQuestion: parseInt($('timeInput').value, 10) || 60,
-    questions: state.questions.map(q => ({
-      image_data: q.image, filename: q.filename,
-      pin_x: q.pinX, pin_y: q.pinY,
-      answer: q.answer, notes: q.notes,
-    })),
-  };
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(payload)], { type: 'application/json' }));
-  a.download = `anatomia-ufma-${new Date().toISOString().slice(0,10)}.json`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(a.href);
-  toast('Exportado.');
+  toast('Gerando backup com imagens… aguarde.', 8000);
+  try {
+    // O servidor lê os arquivos de imagem e embute tudo no JSON
+    const res = await fetch('/api/backup');
+    if (!res.ok) throw new Error();
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `backup-anatomia-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    toast('Backup salvo! Guarde esse arquivo com segurança.');
+  } catch {
+    toast('Erro ao gerar backup.');
+  }
 });
 
 $('importBtn').addEventListener('click', () => $('importInput').click());
