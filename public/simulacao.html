@@ -99,6 +99,54 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
 .progress-fill.warning { background:#FFB347; }
 .progress-fill.critical { background:var(--pin); }
 
+/* MODULE SELECTION */
+.module-select-screen { display:none; flex-direction:column; align-items:center; justify-content:center; min-height:calc(100vh - 130px); padding:40px 24px; text-align:center; }
+.module-select-screen.active { display:flex; }
+.ms-title { font-family:'Cormorant Garamond',serif; font-size:38px; font-weight:600; margin-bottom:8px; }
+.ms-title em { font-style:italic; color:var(--gold); }
+.ms-sub { font-size:14px; color:var(--muted); margin-bottom:36px; }
+.ms-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:14px; width:100%; max-width:700px; margin-bottom:32px; }
+.ms-card { display:flex; flex-direction:column; align-items:center; gap:10px; padding:28px 20px; border:2px solid var(--rule); border-radius:4px; cursor:pointer; transition:all 0.18s ease; background:var(--paper); position:relative; }
+.ms-card:hover { border-color:var(--gold); transform:translateY(-2px); box-shadow:0 6px 20px rgba(10,31,61,0.1); }
+.ms-card.selected { border-color:var(--ink); background:var(--ink); color:var(--paper); }
+.ms-card .ms-name { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:600; }
+.ms-card .ms-count { font-size:12px; color:var(--muted); }
+.ms-card.selected .ms-count { color:rgba(250,247,240,0.6); }
+.ms-card .ms-check { position:absolute; top:10px; right:10px; width:20px; height:20px; border-radius:50%; border:2px solid var(--rule-strong); background:var(--paper); display:flex; align-items:center; justify-content:center; font-size:12px; transition:all 0.15s; }
+.ms-card.selected .ms-check { background:var(--gold); border-color:var(--gold); color:var(--ink); }
+.ms-actions { display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:center; }
+.ms-btn { font-family:inherit; font-size:14px; font-weight:600; padding:14px 36px; background:var(--ink); color:var(--paper); border:none; border-radius:3px; cursor:pointer; transition:all 0.2s ease; }
+.ms-btn:hover { background:var(--gold); color:var(--ink); }
+.ms-btn:disabled { opacity:0.4; cursor:not-allowed; }
+.ms-select-all { font-size:13px; color:var(--muted); background:none; border:none; cursor:pointer; text-decoration:underline; padding:0; font-family:inherit; }
+.ms-select-all:hover { color:var(--ink); }
+
+/* SETUP SCREEN */
+.answer-mode-row { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom:32px; }
+.answer-mode-opt { display:flex; align-items:flex-start; gap:10px; padding:16px 20px; border:2px solid var(--rule); border-radius:4px; cursor:pointer; transition:all 0.15s; max-width:240px; text-align:left; background:var(--paper); }
+.answer-mode-opt:hover { border-color:var(--gold); }
+.answer-mode-opt.selected { border-color:var(--ink); background:rgba(10,31,61,0.04); }
+.answer-mode-opt input[type="radio"] { margin-top:2px; accent-color:var(--ink); flex-shrink:0; }
+.answer-mode-opt .opt-label { font-size:13px; font-weight:600; color:var(--ink); margin-bottom:3px; }
+.answer-mode-opt .opt-desc { font-size:11px; color:var(--muted); line-height:1.4; }
+
+/* ANSWER LIST SCREEN */
+.answer-list-screen { display:none; position:fixed; inset:0; background:var(--paper); z-index:250; flex-direction:column; overflow:hidden; }
+.answer-list-screen.active { display:flex; }
+.als-header { background:var(--ink); color:var(--paper); padding:20px 32px; border-bottom:3px solid var(--gold); display:flex; align-items:center; gap:16px; flex-shrink:0; }
+.als-header img { width:48px; height:48px; object-fit:contain; }
+.als-header-text { flex:1; }
+.als-header-title { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:600; }
+.als-header-sub { font-size:12px; color:var(--gold-soft); letter-spacing:0.1em; text-transform:uppercase; }
+.als-body { flex:1; overflow-y:auto; padding:32px; }
+.als-list { max-width:860px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
+.als-item { display:grid; grid-template-columns:48px 120px 1fr; gap:16px; align-items:center; background:var(--paper); border:1px solid var(--rule); border-radius:3px; padding:14px 16px; }
+.als-num { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; color:var(--muted); text-align:center; }
+.als-thumb { width:120px; height:80px; object-fit:contain; background:var(--paper-soft); border-radius:2px; }
+.als-answer { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:600; color:var(--ink); }
+.als-answer.empty { font-style:italic; color:var(--muted); font-size:16px; }
+.als-footer { padding:20px 32px; border-top:1px solid var(--rule); display:flex; gap:12px; justify-content:center; flex-shrink:0; background:var(--paper-soft); }
+
 /* END SCREEN */
 .end-screen { display:none; position:fixed; inset:0; background:var(--ink); z-index:250; flex-direction:column; align-items:center; justify-content:center; color:var(--paper); padding:48px; text-align:center; }
 .end-screen.active { display:flex; }
@@ -196,12 +244,41 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
   </div>
 </header>
 
+<!-- SELEÇÃO DE MÓDULOS -->
+<div class="module-select-screen" id="moduleSelectScreen">
+  <h2 class="ms-title">Escolha o <em>módulo</em></h2>
+  <div class="ms-sub">Selecione um ou mais módulos para a simulação</div>
+  <div class="ms-grid" id="msGrid"></div>
+  <div class="ms-actions">
+    <button class="ms-select-all" id="msSelectAll">Selecionar todos</button>
+    <button class="ms-btn" id="msContinueBtn" disabled>Continuar →</button>
+  </div>
+</div>
+
 <!-- SETUP -->
 <div class="setup" id="setupScreen" style="display:none">
   <img class="setup-icon" src="logo ufma.png" alt="UFMA">
   <h2 class="setup-title">Pronto para a <em>simulação?</em></h2>
-  <div class="setup-count"><strong id="questCount">0</strong> questões disponíveis</div>
+  <div class="setup-count"><strong id="questCount">0</strong> questões</div>
   <div class="setup-rule"></div>
+
+  <div class="answer-mode-row">
+    <label class="answer-mode-opt selected" id="modeImmediate">
+      <input type="radio" name="answerMode" value="immediate" checked>
+      <div>
+        <div class="opt-label">Resposta imediata</div>
+        <div class="opt-desc">Aparece logo após o tempo ou ao pular</div>
+      </div>
+    </label>
+    <label class="answer-mode-opt" id="modeEndList">
+      <input type="radio" name="answerMode" value="endlist">
+      <div>
+        <div class="opt-label">Lista no final</div>
+        <div class="opt-desc">Todas as respostas em ordem ao encerrar</div>
+      </div>
+    </label>
+  </div>
+
   <div class="setup-time-row">
     <label for="timeInput">Tempo por questão</label>
     <input type="number" id="timeInput" value="60" min="5" max="600" step="5">
@@ -269,6 +346,24 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
   </div>
 </div>
 
+<!-- ANSWER LIST SCREEN -->
+<div class="answer-list-screen" id="answerListScreen">
+  <div class="als-header">
+    <img src="logo ufma.png" alt="UFMA">
+    <div class="als-header-text">
+      <div class="als-header-title">Gabarito da simulação</div>
+      <div class="als-header-sub">Estruturas na ordem em que apareceram</div>
+    </div>
+  </div>
+  <div class="als-body">
+    <div class="als-list" id="alsList"></div>
+  </div>
+  <div class="als-footer">
+    <button class="end-btn primary" id="alsRestartBtn">Refazer</button>
+    <button class="end-btn" id="alsBackBtn">Início</button>
+  </div>
+</div>
+
 <!-- END SCREEN -->
 <div class="end-screen" id="endScreen">
   <img class="end-emblem" src="logo ufma.png" alt="UFMA">
@@ -282,7 +377,12 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
 
 <script>
 const state = {
-  questions: [], timePerQuestion: 60,
+  questions: [],
+  modules: [],
+  selectedModuleIds: [],  // módulos escolhidos pelo aluno
+  answerMode: 'immediate', // 'immediate' | 'endlist'
+  sessionLog: [],          // [{image, answer}] para modo endlist
+  timePerQuestion: 60,
   currentPresIdx: 0, timer: null, answerTimer: null,
   remaining: 0, paused: false, showingAnswer: false,
 };
@@ -316,36 +416,131 @@ function normalizeQuestion(q) {
     pinX: q.pin_x  !== null && q.pin_x  !== undefined ? parseFloat(q.pin_x)  : null,
     pinY: q.pin_y  !== null && q.pin_y  !== undefined ? parseFloat(q.pin_y)  : null,
     answer: q.answer || '', notes: q.notes || '',
+    moduleId: q.module_id ?? null,
   };
 }
 
-async function loadQuestions() {
+// ===== MÓDULOS =====
+async function loadAndShowModules() {
   $('loadingScreen').style.display = 'block';
-  $('setupScreen').style.display   = 'none';
-  $('emptyScreen').style.display   = 'none';
   try {
-    const res  = await fetch('/api/questions');
-    const data = await res.json();
-    state.questions = data.map(normalizeQuestion);
+    const [modRes, qRes] = await Promise.all([
+      fetch('/api/modules'),
+      fetch('/api/questions'),
+    ]);
+    state.modules   = await modRes.json();
+    const allQ      = await qRes.json();
+    state.questions = allQ.map(normalizeQuestion);
   } catch {
-    state.questions = [];
+    state.modules = []; state.questions = [];
   }
   $('loadingScreen').style.display = 'none';
+
   if (state.questions.length === 0) {
     $('emptyScreen').style.display = 'block';
+    return;
+  }
+
+  if (state.modules.length > 0) {
+    renderModuleSelect();
+    $('moduleSelectScreen').classList.add('active');
   } else {
-    $('questCount').textContent    = state.questions.length;
-    $('setupScreen').style.display = 'flex';
+    // Sem módulos: vai direto para setup com todas as questões
+    state.selectedModuleIds = [];
+    showSetup(state.questions);
   }
 }
+
+function renderModuleSelect() {
+  const grid = $('msGrid');
+  grid.innerHTML = state.modules.map(m => {
+    const cnt = state.questions.filter(q => q.moduleId === m.id).length;
+    return `
+      <div class="ms-card" data-id="${m.id}">
+        <span class="ms-check">✓</span>
+        <span class="ms-name">${m.name}</span>
+        <span class="ms-count">${cnt} questões</span>
+      </div>`;
+  }).join('');
+
+  // Questões sem módulo
+  const noMod = state.questions.filter(q => q.moduleId === null).length;
+  if (noMod > 0) {
+    grid.innerHTML += `
+      <div class="ms-card" data-id="null">
+        <span class="ms-check">✓</span>
+        <span class="ms-name">Sem módulo</span>
+        <span class="ms-count">${noMod} questões</span>
+      </div>`;
+  }
+
+  updateMsButton();
+}
+
+function updateMsButton() {
+  $('msContinueBtn').disabled = state.selectedModuleIds.length === 0;
+  const total = state.modules.length + (state.questions.some(q => q.moduleId === null) ? 1 : 0);
+  $('msSelectAll').textContent =
+    state.selectedModuleIds.length === total ? 'Desmarcar todos' : 'Selecionar todos';
+}
+
+$('msGrid').addEventListener('click', e => {
+  const card = e.target.closest('.ms-card');
+  if (!card) return;
+  const id = card.dataset.id === 'null' ? null : parseInt(card.dataset.id);
+  const key = id === null ? 'null' : id;
+  const pos = state.selectedModuleIds.indexOf(key);
+  if (pos === -1) { state.selectedModuleIds.push(key); card.classList.add('selected'); }
+  else { state.selectedModuleIds.splice(pos, 1); card.classList.remove('selected'); }
+  updateMsButton();
+});
+
+$('msSelectAll').addEventListener('click', () => {
+  const cards = $('msGrid').querySelectorAll('.ms-card');
+  const total = cards.length;
+  if (state.selectedModuleIds.length === total) {
+    state.selectedModuleIds = [];
+    cards.forEach(c => c.classList.remove('selected'));
+  } else {
+    state.selectedModuleIds = [...cards].map(c => c.dataset.id === 'null' ? 'null' : parseInt(c.dataset.id));
+    cards.forEach(c => c.classList.add('selected'));
+  }
+  updateMsButton();
+});
+
+$('msContinueBtn').addEventListener('click', () => {
+  const filtered = state.questions.filter(q => {
+    const key = q.moduleId === null ? 'null' : q.moduleId;
+    return state.selectedModuleIds.includes(key) || (typeof key === 'number' && state.selectedModuleIds.includes(key));
+  });
+  $('moduleSelectScreen').classList.remove('active');
+  showSetup(filtered);
+});
+
+function showSetup(questions) {
+  state.questions = questions;
+  $('questCount').textContent    = questions.length;
+  $('setupScreen').style.display = 'flex';
+}
+
+// Opção de modo de resposta
+document.querySelectorAll('input[name="answerMode"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    state.answerMode = radio.value;
+    $('modeImmediate').classList.toggle('selected', radio.value === 'immediate');
+    $('modeEndList').classList.toggle('selected', radio.value === 'endlist');
+  });
+});
 
 function startPresentation() {
   state.timePerQuestion = Math.max(5, parseInt($('timeInput').value, 10) || 60);
   state.currentPresIdx  = 0;
+  state.sessionLog      = [];
   $('presTotal').textContent = state.questions.length;
   $('setupScreen').style.display = 'none';
   $('presentation').classList.add('active');
   $('endScreen').classList.remove('active');
+  $('answerListScreen').classList.remove('active');
   loadPresQuestion();
 }
 
@@ -407,6 +602,16 @@ function updateTimer() {
 
 function nextQuestion() {
   stopTimer(); clearTimeout(state.answerTimer);
+  const q = state.questions[state.currentPresIdx];
+  // Registra no log (para modo endlist)
+  if (state.answerMode === 'endlist') {
+    if (!state.sessionLog.find(l => l.idx === state.currentPresIdx)) {
+      state.sessionLog.push({ idx: state.currentPresIdx, image: q.image, answer: q.answer });
+    }
+    doAdvance(); // sem mostrar resposta
+    return;
+  }
+  // Modo imediato
   if (!state.showingAnswer) {
     state.showingAnswer = true;
     $('presAnswer').classList.add('show');
@@ -428,10 +633,7 @@ function prevQuestion() {
   loadPresQuestion();
 }
 
-function togglePause() {
-  state.paused = !state.paused;
-  updatePauseBtn();
-}
+function togglePause() { state.paused = !state.paused; updatePauseBtn(); }
 
 function updatePauseBtn() {
   const icon  = $('pauseIcon');
@@ -455,8 +657,36 @@ function exitPresentation() {
 function endSimulation() {
   stopTimer(); clearTimeout(state.answerTimer);
   $('presentation').classList.remove('active');
-  $('endScreen').classList.add('active');
+  if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+
+  if (state.answerMode === 'endlist') {
+    // Garante que a última questão está no log
+    const q = state.questions[state.currentPresIdx];
+    if (!state.sessionLog.find(l => l.idx === state.currentPresIdx)) {
+      state.sessionLog.push({ idx: state.currentPresIdx, image: q.image, answer: q.answer });
+    }
+    renderAnswerList();
+    $('answerListScreen').classList.add('active');
+  } else {
+    $('endScreen').classList.add('active');
+  }
 }
+
+function renderAnswerList() {
+  $('alsList').innerHTML = state.sessionLog.map((item, i) => `
+    <div class="als-item">
+      <div class="als-num">${i + 1}</div>
+      <img class="als-thumb" src="${item.image}" alt="Q${i+1}">
+      <div class="als-answer ${item.answer ? '' : 'empty'}">${item.answer || '(sem resposta cadastrada)'}</div>
+    </div>
+  `).join('');
+}
+
+$('alsRestartBtn').addEventListener('click', () => {
+  $('answerListScreen').classList.remove('active');
+  startPresentation();
+});
+$('alsBackBtn').addEventListener('click', () => { window.location.href = '/'; });
 
 $('startBtn').addEventListener('click', startPresentation);
 $('prevBtn').addEventListener('click', prevQuestion);
@@ -490,7 +720,7 @@ document.querySelector('.pres-stage').addEventListener('touchend', e => {
     dx < 0 ? nextQuestion() : prevQuestion();
 }, { passive: true });
 
-loadQuestions();
+loadAndShowModules();
 </script>
 </body>
 </html>

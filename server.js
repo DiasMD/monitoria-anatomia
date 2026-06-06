@@ -18,6 +18,14 @@ fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const db = new DatabaseSync(DB_PATH);
 db.exec('PRAGMA journal_mode = WAL');
 db.exec(`
+  CREATE TABLE IF NOT EXISTS modules (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT    NOT NULL,
+    position   INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT    DEFAULT (datetime('now'))
+  )
+`);
+db.exec(`
   CREATE TABLE IF NOT EXISTS questions (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     position   INTEGER NOT NULL DEFAULT 0,
@@ -27,9 +35,12 @@ db.exec(`
     pin_y      REAL,
     answer     TEXT    DEFAULT '',
     notes      TEXT    DEFAULT '',
+    module_id  INTEGER REFERENCES modules(id),
     created_at TEXT    DEFAULT (datetime('now'))
   )
 `);
+// Migração: adiciona module_id em instalações antigas
+try { db.exec('ALTER TABLE questions ADD COLUMN module_id INTEGER'); } catch {}
 
 // ── Middleware ────────────────────────────────────────────
 app.use(express.json({ limit: '100mb' }));
@@ -66,30 +77,68 @@ app.get('/api/me', (req, res) => {
   res.json({ isMonitor: !!req.session?.isMonitor });
 });
 
+// ── Modules ───────────────────────────────────────────────
+app.get('/api/modules', (req, res) => {
+  const rows = db.prepare('SELECT * FROM modules ORDER BY position ASC, id ASC').all();
+  // Adiciona contagem de questões por módulo
+  const count = db.prepare('SELECT module_id, COUNT(*) as n FROM questions GROUP BY module_id');
+  const counts = {};
+  count.all().forEach(r => { counts[r.module_id] = r.n; });
+  res.json(rows.map(m => ({ ...m, question_count: counts[m.id] || 0 })));
+});
+
+app.post('/api/modules', requireMonitor, (req, res) => {
+  const name = (req.body.name || '').trim();
+  if (!name) return res.status(400).json({ error: 'Nome obrigatório' });
+  const { m } = db.prepare('SELECT COALESCE(MAX(position), -1) as m FROM modules').get();
+  const r = db.prepare('INSERT INTO modules (name, position) VALUES (?, ?)').run(name, m + 1);
+  res.json(db.prepare('SELECT * FROM modules WHERE id = ?').get(r.lastInsertRowid));
+});
+
+app.put('/api/modules/:id', requireMonitor, (req, res) => {
+  const name = (req.body.name || '').trim();
+  if (!name) return res.status(400).json({ error: 'Nome obrigatório' });
+  db.prepare('UPDATE modules SET name = ? WHERE id = ?').run(name, req.params.id);
+  res.json(db.prepare('SELECT * FROM modules WHERE id = ?').get(req.params.id));
+});
+
+app.delete('/api/modules/:id', requireMonitor, (req, res) => {
+  db.prepare('UPDATE questions SET module_id = NULL WHERE module_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM modules WHERE id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
 // ── Questions ─────────────────────────────────────────────
 app.get('/api/questions', (req, res) => {
-  res.json(
-    db.prepare(
-      'SELECT id, position, image_data, filename, pin_x, pin_y, answer, notes FROM questions ORDER BY position ASC, id ASC'
-    ).all()
-  );
+  const { modules } = req.query; // ex: "1,3,5"
+  let sql = 'SELECT id, position, image_data, filename, pin_x, pin_y, answer, notes, module_id FROM questions';
+  const params = [];
+  if (modules) {
+    const ids = modules.split(',').map(Number).filter(Boolean);
+    if (ids.length) {
+      sql += ` WHERE module_id IN (${ids.map(() => '?').join(',')})`;
+      params.push(...ids);
+    }
+  }
+  sql += ' ORDER BY position ASC, id ASC';
+  res.json(db.prepare(sql).all(...params));
 });
 
 app.post('/api/questions', requireMonitor, (req, res) => {
-  const { image_data, filename, pin_x, pin_y, answer, notes } = req.body;
+  const { image_data, filename, pin_x, pin_y, answer, notes, module_id } = req.body;
   if (!image_data) return res.status(400).json({ error: 'image_data obrigatório' });
   const { m } = db.prepare('SELECT COALESCE(MAX(position), -1) as m FROM questions').get();
   const result = db.prepare(
-    'INSERT INTO questions (position, image_data, filename, pin_x, pin_y, answer, notes) VALUES (?,?,?,?,?,?,?)'
-  ).run(m + 1, image_data, filename || '', pin_x ?? null, pin_y ?? null, answer || '', notes || '');
+    'INSERT INTO questions (position, image_data, filename, pin_x, pin_y, answer, notes, module_id) VALUES (?,?,?,?,?,?,?,?)'
+  ).run(m + 1, image_data, filename || '', pin_x ?? null, pin_y ?? null, answer || '', notes || '', module_id ?? null);
   res.json(db.prepare('SELECT * FROM questions WHERE id = ?').get(result.lastInsertRowid));
 });
 
 app.put('/api/questions/:id', requireMonitor, (req, res) => {
-  const { pin_x, pin_y, answer, notes } = req.body;
+  const { pin_x, pin_y, answer, notes, module_id } = req.body;
   db.prepare(
-    'UPDATE questions SET pin_x=?, pin_y=?, answer=?, notes=? WHERE id=?'
-  ).run(pin_x ?? null, pin_y ?? null, answer || '', notes || '', req.params.id);
+    'UPDATE questions SET pin_x=?, pin_y=?, answer=?, notes=?, module_id=? WHERE id=?'
+  ).run(pin_x ?? null, pin_y ?? null, answer || '', notes || '', module_id ?? null, req.params.id);
   res.json(db.prepare('SELECT * FROM questions WHERE id=?').get(req.params.id));
 });
 

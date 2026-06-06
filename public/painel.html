@@ -94,6 +94,23 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
 .card-btn:hover { background: var(--paper-soft); color: var(--ink); }
 .card-btn.danger:hover { background: #fdecee; color: var(--pin); }
 
+/* MÓDULOS */
+.modules-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid var(--rule); }
+.module-tab { font-family: inherit; font-size: 12px; font-weight: 600; padding: 7px 14px; border: 1.5px solid var(--rule-strong); background: var(--paper); color: var(--muted); cursor: pointer; border-radius: 20px; transition: all 0.15s ease; letter-spacing: 0.04em; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.module-tab:hover { border-color: var(--ink); color: var(--ink); }
+.module-tab.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.module-tab .tab-count { font-size: 10px; background: rgba(255,255,255,0.2); padding: 1px 5px; border-radius: 10px; }
+.module-tab:not(.active) .tab-count { background: rgba(10,31,61,0.08); color: var(--muted); }
+.module-tab .tab-edit { opacity: 0; font-size: 11px; cursor: pointer; padding: 0 2px; transition: opacity 0.1s; }
+.module-tab:hover .tab-edit { opacity: 0.6; }
+.module-tab .tab-edit:hover { opacity: 1; color: var(--gold); }
+.btn-new-module { font-family: inherit; font-size: 12px; font-weight: 500; padding: 7px 12px; border: 1.5px dashed var(--rule-strong); background: transparent; color: var(--muted); cursor: pointer; border-radius: 20px; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 5px; }
+.btn-new-module:hover { border-color: var(--gold); color: var(--gold); }
+.module-selector-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.module-selector-row label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500; white-space: nowrap; }
+.module-select { font-family: inherit; font-size: 13px; padding: 8px 12px; border: 1px solid var(--rule-strong); background: var(--paper); border-radius: 2px; color: var(--ink); cursor: pointer; flex: 1; max-width: 260px; }
+.module-select:focus { outline: none; border-color: var(--ink); }
+
 /* EMPTY */
 .empty-state { text-align: center; padding: 80px 32px; color: var(--muted); }
 .empty-state .title { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 500; font-style: italic; color: var(--ink-soft); margin-bottom: 8px; }
@@ -380,8 +397,25 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
 
 <!-- MAIN -->
 <main class="main">
+  <div class="section-title serif">Módulos</div>
+  <div class="section-rule"></div>
+  <div class="modules-bar" id="modulesBar">
+    <button class="module-tab active" data-module="all" id="tabAll">Todos <span class="tab-count" id="tabAllCount">0</span></button>
+    <button class="btn-new-module" id="newModuleBtn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+      Novo módulo
+    </button>
+  </div>
+
   <div class="section-title serif">Banco de imagens</div>
   <div class="section-rule"></div>
+
+  <div class="module-selector-row">
+    <label for="uploadModuleSelect">Módulo do upload</label>
+    <select class="module-select" id="uploadModuleSelect">
+      <option value="">— sem módulo —</option>
+    </select>
+  </div>
 
   <div class="upload-zone" id="uploadZone" tabindex="0" role="button">
     <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -434,6 +468,12 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
           <label class="field-label" for="answerInput">Resposta (opcional)</label>
           <textarea class="field-textarea" id="answerInput" placeholder="Ex.: Nervo mediano"></textarea>
           <div class="field-help">Aparece ao revelar resposta durante a simulação.</div>
+        </div>
+        <div>
+          <label class="field-label" for="editorModuleSelect">Módulo</label>
+          <select class="field-input" id="editorModuleSelect">
+            <option value="">— sem módulo —</option>
+          </select>
         </div>
         <div>
           <label class="field-label" for="notesInput">Observação (opcional)</label>
@@ -514,7 +554,9 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
 <script>
 // ===== STATE =====
 const state = {
-  questions: [],       // normalized local copy
+  questions: [],
+  modules: [],
+  activeModuleId: null,  // null = todos
   timePerQuestion: 60,
   currentEditorIdx: null,
   currentPresIdx: 0,
@@ -524,7 +566,7 @@ const state = {
   paused: false,
   showingAnswer: false,
 };
-let editorOriginalPin = null; // restore if editor closed without saving
+let editorOriginalPin = null;
 
 // ===== UTILS =====
 function $(id) { return document.getElementById(id); }
@@ -580,8 +622,105 @@ function normalizeQuestion(q) {
     pinY:     q.pin_y  !== null && q.pin_y  !== undefined ? parseFloat(q.pin_y)  : null,
     answer:   q.answer || '',
     notes:    q.notes  || '',
+    moduleId: q.module_id ?? null,
   };
 }
+
+// ===== MÓDULOS =====
+async function loadModules() {
+  const res  = await fetch('/api/modules');
+  state.modules = await res.json();
+  renderModuleTabs();
+  renderModuleSelects();
+}
+
+function renderModuleTabs() {
+  const bar = $('modulesBar');
+  // Remove tabs antigos (manter botão "Todos" e "Novo módulo")
+  bar.querySelectorAll('[data-module]:not(#tabAll)').forEach(el => el.remove());
+  const newBtn = $('newModuleBtn');
+
+  const total = state.questions.length;
+  $('tabAllCount').textContent = total;
+
+  state.modules.forEach(mod => {
+    const tab = document.createElement('button');
+    tab.className = 'module-tab' + (state.activeModuleId === mod.id ? ' active' : '');
+    tab.dataset.module = mod.id;
+    tab.innerHTML = `
+      <span>${escapeHTML(mod.name)}</span>
+      <span class="tab-count">${mod.question_count ?? 0}</span>
+      <span class="tab-edit" data-edit="${mod.id}" title="Renomear">✎</span>
+      <span class="tab-edit" data-delete="${mod.id}" title="Excluir">✕</span>`;
+    bar.insertBefore(tab, newBtn);
+  });
+
+  // Atualiza "Todos"
+  $('tabAll').className = 'module-tab' + (state.activeModuleId === null ? ' active' : '');
+
+  // Reconta "Todos"
+  $('tabAllCount').textContent = state.questions.length;
+}
+
+function renderModuleSelects() {
+  const opts = `<option value="">— sem módulo —</option>` +
+    state.modules.map(m => `<option value="${m.id}">${escapeHTML(m.name)}</option>`).join('');
+  $('uploadModuleSelect').innerHTML = opts;
+  $('editorModuleSelect').innerHTML = opts;
+}
+
+// Delegação de eventos da barra de módulos
+$('modulesBar').addEventListener('click', async (e) => {
+  const tab    = e.target.closest('[data-module]');
+  const edit   = e.target.closest('[data-edit]');
+  const del    = e.target.closest('[data-delete]');
+
+  if (del) {
+    e.stopPropagation();
+    const mod = state.modules.find(m => m.id === parseInt(del.dataset.delete));
+    if (!mod) return;
+    if (!confirm(`Excluir módulo "${mod.name}"? As questões não serão apagadas, apenas desvinculadas.`)) return;
+    await fetch(`/api/modules/${mod.id}`, { method: 'DELETE' });
+    if (state.activeModuleId === mod.id) state.activeModuleId = null;
+    await loadModules();
+    await loadFromServer();
+    return;
+  }
+
+  if (edit) {
+    e.stopPropagation();
+    const mod = state.modules.find(m => m.id === parseInt(edit.dataset.edit));
+    if (!mod) return;
+    const name = prompt('Novo nome do módulo:', mod.name);
+    if (!name?.trim() || name.trim() === mod.name) return;
+    await fetch(`/api/modules/${mod.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name.trim() }),
+    });
+    await loadModules();
+    return;
+  }
+
+  if (tab) {
+    const val = tab.dataset.module;
+    state.activeModuleId = val === 'all' ? null : parseInt(val);
+    renderModuleTabs();
+    renderGrid();
+  }
+});
+
+$('newModuleBtn').addEventListener('click', async () => {
+  const name = prompt('Nome do novo módulo (ex.: Pelve, Abdome, Períneo):');
+  if (!name?.trim()) return;
+  await fetch('/api/modules', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: name.trim() }),
+  });
+  await loadModules();
+  toast(`Módulo "${name.trim()}" criado.`);
+});
 
 // ===== AUTH =====
 async function checkAuth() {
@@ -601,13 +740,14 @@ async function loadFromServer() {
   $('grid').style.display = 'none';
   $('emptyState').style.display = 'none';
   try {
-    const res = await fetch('/api/questions');
+    const res  = await fetch('/api/questions');
     const data = await res.json();
     state.questions = data.map(normalizeQuestion);
   } catch {
     toast('Erro ao carregar questões do servidor.');
   }
   $('loadingState').style.display = 'none';
+  renderModuleTabs(); // atualiza contagens
   renderGrid();
 }
 
@@ -625,6 +765,8 @@ async function handleFiles(files) {
   const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
   if (!imageFiles.length) { toast('Nenhuma imagem selecionada.'); return; }
 
+  const moduleId = $('uploadModuleSelect').value ? parseInt($('uploadModuleSelect').value) : null;
+
   let added = 0;
   for (const file of imageFiles) {
     try {
@@ -632,7 +774,7 @@ async function handleFiles(files) {
       const res = await fetch('/api/questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_data: dataUrl, filename: file.name }),
+        body: JSON.stringify({ image_data: dataUrl, filename: file.name, module_id: moduleId }),
       });
       if (!res.ok) { toast('Erro ao salvar imagem no servidor.'); continue; }
       const q = await res.json();
@@ -642,6 +784,7 @@ async function handleFiles(files) {
       toast('Erro ao processar arquivo.');
     }
   }
+  await loadModules(); // atualiza contagens
   renderGrid();
   if (added > 0) toast(`${added} ${added === 1 ? 'imagem adicionada' : 'imagens adicionadas'}.`);
 }
@@ -664,13 +807,18 @@ $('uploadZone').addEventListener('drop', (e) => {
 
 // ===== GRID RENDER =====
 function renderGrid() {
-  const grid = $('grid');
+  const grid  = $('grid');
   const empty = $('emptyState');
+
+  // Filtra por módulo ativo
+  const visible = state.activeModuleId === null
+    ? state.questions
+    : state.questions.filter(q => q.moduleId === state.activeModuleId);
 
   $('totalCount').textContent = state.questions.length;
   $('readyCount').textContent = state.questions.filter(q => q.pinX !== null).length;
 
-  if (state.questions.length === 0) {
+  if (visible.length === 0) {
     grid.style.display = 'none';
     empty.style.display = 'block';
     return;
@@ -678,24 +826,28 @@ function renderGrid() {
 
   empty.style.display = 'none';
   grid.style.display = 'grid';
-  grid.innerHTML = state.questions.map((q, idx) => {
+
+  grid.innerHTML = visible.map((q, visIdx) => {
+    const idx    = state.questions.indexOf(q); // índice real
     const hasPin = q.pinX !== null;
+    const mod    = state.modules.find(m => m.id === q.moduleId);
     const pinHTML = hasPin
       ? `<div class="card-pin" style="left:${q.pinX}%;top:${q.pinY}%"><div class="pin-marker"></div></div>`
       : '';
     return `
       <div class="card" data-idx="${idx}">
         <div class="card-image-wrap" data-action="edit">
-          <span class="card-number">${idx + 1}</span>
+          <span class="card-number">${visIdx + 1}</span>
           <span class="card-status ${hasPin ? 'status-ready' : 'status-pending'}">${hasPin ? 'Marcada' : 'Sem alfinete'}</span>
-          <img src="${q.image}" alt="Questão ${idx+1}" loading="lazy">
+          <img src="${q.image}" alt="Questão ${visIdx+1}" loading="lazy">
           ${pinHTML}
         </div>
         <div class="card-body">
+          ${mod ? `<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--gold);font-weight:600;margin-bottom:5px;">${escapeHTML(mod.name)}</div>` : ''}
           <div class="card-label ${q.answer ? '' : 'empty'}">${escapeHTML(q.answer || 'Sem resposta cadastrada')}</div>
           <div class="card-actions">
-            <button class="card-btn" data-action="up" ${idx===0?'disabled':''}>↑ Acima</button>
-            <button class="card-btn" data-action="down" ${idx===state.questions.length-1?'disabled':''}>↓ Abaixo</button>
+            <button class="card-btn" data-action="up" ${idx===0?'disabled':''}>↑</button>
+            <button class="card-btn" data-action="down" ${idx===state.questions.length-1?'disabled':''}>↓</button>
             <button class="card-btn danger" data-action="delete">Remover</button>
           </div>
         </div>
@@ -751,6 +903,7 @@ function openEditor(idx) {
   $('editorImage').src = q.image;
   $('answerInput').value = q.answer || '';
   $('notesInput').value = q.notes || '';
+  $('editorModuleSelect').value = q.moduleId ?? '';
   updateEditorPin();
   $('editorModal').classList.add('active');
 }
@@ -817,20 +970,23 @@ $('removePinBtn').addEventListener('click', () => {
 });
 
 $('saveEditorBtn').addEventListener('click', async () => {
-  const q      = state.questions[state.currentEditorIdx];
-  const answer = $('answerInput').value.trim();
-  const notes  = $('notesInput').value.trim();
+  const q        = state.questions[state.currentEditorIdx];
+  const answer   = $('answerInput').value.trim();
+  const notes    = $('notesInput').value.trim();
+  const moduleId = $('editorModuleSelect').value ? parseInt($('editorModuleSelect').value) : null;
 
   const res = await fetch(`/api/questions/${q.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pin_x: q.pinX, pin_y: q.pinY, answer, notes }),
+    body: JSON.stringify({ pin_x: q.pinX, pin_y: q.pinY, answer, notes, module_id: moduleId }),
   });
 
   if (res.ok) {
-    q.answer = answer;
-    q.notes  = notes;
+    q.answer   = answer;
+    q.notes    = notes;
+    q.moduleId = moduleId;
     closeEditor(true);
+    await loadModules();
     renderGrid();
     toast('Questão salva.');
   } else {
@@ -1102,7 +1258,10 @@ if ('ontouchstart' in window) {
 }
 
 // ===== INIT =====
-checkAuth().then(loadFromServer);
+checkAuth().then(async () => {
+  await loadModules();
+  await loadFromServer();
+});
 </script>
 </body>
 </html>
