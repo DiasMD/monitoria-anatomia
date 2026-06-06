@@ -129,15 +129,55 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
 .sidebar-actions { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--rule); display: flex; flex-direction: column; gap: 10px; }
 
 /* PIN */
-.pin-marker { width: 26px; height: 50px; position: relative; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5)); }
-.pin-marker::before { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 3.5px; height: 32px; background: linear-gradient(to bottom, #b0b0b0 0%, #707070 45%, #2a2a2a 100%); border-radius: 0 0 1.5px 1.5px; clip-path: polygon(0% 0%, 100% 0%, 58% 100%, 42% 100%); }
-.pin-marker::after { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 22px; height: 22px; background: radial-gradient(circle at 38% 32%, #ff8080 0%, #d62020 55%, #8a0000 100%); border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.4); box-shadow: inset 0 3px 5px rgba(255,255,255,0.35), inset 0 -3px 5px rgba(0,0,0,0.35), 0 2px 5px rgba(0,0,0,0.35); }
-.pin-marker.large { width: 40px; height: 74px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6)); }
-.pin-marker.large::before { width: 5px; height: 48px; }
-.pin-marker.large::after { width: 32px; height: 32px; border-width: 2px; animation: pulse 1.8s ease-in-out infinite; }
-@keyframes pulse {
-  0%,100% { box-shadow: inset 0 4px 6px rgba(255,255,255,0.35), inset 0 -4px 6px rgba(0,0,0,0.35), 0 3px 8px rgba(0,0,0,0.4), 0 0 20px var(--pin-glow); }
-  50% { box-shadow: inset 0 4px 6px rgba(255,255,255,0.35), inset 0 -4px 6px rgba(0,0,0,0.35), 0 3px 8px rgba(0,0,0,0.4), 0 0 36px var(--pin-glow); }
+.pin-marker {
+  width: 18px; height: 44px;
+  position: relative;
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.6));
+}
+/* Agulha — larga no topo, afina na ponta */
+.pin-marker::before {
+  content: ''; position: absolute; bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 2px; height: 32px;
+  background: linear-gradient(to bottom, #ccc 0%, #888 40%, #222 100%);
+  clip-path: polygon(0% 0%, 100% 0%, 58% 100%, 42% 100%);
+}
+/* Cabeça — menor, com contorno branco para destacar em qualquer fundo */
+.pin-marker::after {
+  content: ''; position: absolute; top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 13px; height: 13px;
+  background: radial-gradient(circle at 36% 30%, #ff9090 0%, #e02020 50%, #960000 100%);
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.7);
+  box-shadow: 0 0 0 1.5px rgba(180,20,20,0.45), 0 2px 5px rgba(0,0,0,0.55);
+}
+
+/* Versão grande — modo apresentação */
+.pin-marker.large {
+  width: 26px; height: 60px;
+  filter: drop-shadow(0 3px 8px rgba(0,0,0,0.7));
+}
+.pin-marker.large::before { width: 2.5px; height: 44px; }
+.pin-marker.large::after {
+  width: 17px; height: 17px;
+  border-width: 2.5px;
+  animation: pulse-ring 2s ease-in-out infinite;
+}
+/* Anel pulsante expandindo para fora — sem aumentar a bola */
+@keyframes pulse-ring {
+  0%, 100% {
+    box-shadow:
+      0 0 0 2px rgba(214,38,58,0.55),
+      0 0 0 5px rgba(214,38,58,0.2),
+      0 3px 7px rgba(0,0,0,0.55);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(214,38,58,0.65),
+      0 0 0 11px rgba(214,38,58,0.1),
+      0 3px 7px rgba(0,0,0,0.55);
+  }
 }
 
 /* PRESENTATION */
