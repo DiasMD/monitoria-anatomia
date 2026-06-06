@@ -1,20 +1,25 @@
 require('dotenv').config();
-const express = require('express');
-const session = require('express-session');
+const express  = require('express');
+const session  = require('express-session');
+const multer   = require('multer');
 const { DatabaseSync } = require('node:sqlite');
-const path = require('path');
-const fs = require('fs');
+const path     = require('path');
+const fs       = require('fs');
 
-const app = express();
+const app  = express();
 const PORT = process.env.PORT || 3000;
 
 const MONITOR_USER   = process.env.MONITOR_USER   || 'monitores.ufma';
 const MONITOR_PASS   = process.env.MONITOR_PASS   || 'monitoriatopografica123';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'ufma-anatomia-secret-2024';
 const DB_PATH        = process.env.DB_PATH        || path.join(__dirname, 'data.db');
+const UPLOADS_DIR    = process.env.UPLOADS_PATH   || path.join(__dirname, 'uploads');
 
-// ── Database ──────────────────────────────────────────────
+// ── Pastas ────────────────────────────────────────────────
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+// ── Banco de dados ────────────────────────────────────────
 const db = new DatabaseSync(DB_PATH);
 db.exec('PRAGMA journal_mode = WAL');
 db.exec(`
@@ -29,29 +34,72 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS questions (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     position   INTEGER NOT NULL DEFAULT 0,
-    image_data TEXT    NOT NULL,
+    image_url  TEXT    NOT NULL DEFAULT '',
+    image_data TEXT    DEFAULT '',
     filename   TEXT    DEFAULT '',
     pin_x      REAL,
     pin_y      REAL,
     answer     TEXT    DEFAULT '',
     notes      TEXT    DEFAULT '',
-    module_id  INTEGER REFERENCES modules(id),
+    module_id  INTEGER,
     created_at TEXT    DEFAULT (datetime('now'))
   )
 `);
-// Migração: adiciona module_id em instalações antigas
-try { db.exec('ALTER TABLE questions ADD COLUMN module_id INTEGER'); } catch {}
+
+// Migrações para instalações antigas
+['module_id INTEGER', 'image_url TEXT DEFAULT ""'].forEach(col => {
+  try { db.exec(`ALTER TABLE questions ADD COLUMN ${col}`); } catch {}
+});
+
+// ── Migração: base64 → arquivo ────────────────────────────
+// Converte imagens antigas (salvas como base64) para arquivos reais.
+// Roda uma vez ao iniciar; questões já migradas são ignoradas.
+function migrateBase64() {
+  const rows = db.prepare(
+    `SELECT id, image_data FROM questions
+     WHERE (image_url IS NULL OR image_url = '')
+       AND image_data IS NOT NULL AND image_data LIKE 'data:%'`
+  ).all();
+  if (!rows.length) return;
+  console.log(`[migração] convertendo ${rows.length} imagem(ns) de base64 para arquivo...`);
+  for (const row of rows) {
+    try {
+      const m   = row.image_data.match(/^data:([^;]+);base64,(.+)$/s);
+      if (!m) continue;
+      const ext      = (m[1].split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+      const filename = `img-${row.id}-${Date.now()}.${ext}`;
+      fs.writeFileSync(path.join(UPLOADS_DIR, filename), Buffer.from(m[2], 'base64'));
+      db.prepare(`UPDATE questions SET image_url=?, image_data='' WHERE id=?`)
+        .run(`/uploads/${filename}`, row.id);
+      console.log(`  ✓ questão ${row.id} → ${filename}`);
+    } catch (err) {
+      console.error(`  ✗ questão ${row.id}:`, err.message);
+    }
+  }
+}
+migrateBase64();
+
+// ── Upload com multer ─────────────────────────────────────
+const storage = multer.diskStorage({
+  destination: UPLOADS_DIR,
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+    cb(null, `img-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+  },
+});
+const upload = multer({ storage, limits: { fileSize: 25 * 1024 * 1024 } });
 
 // ── Middleware ────────────────────────────────────────────
-app.use(express.json({ limit: '100mb' }));
+app.use(express.json({ limit: '50mb' })); // menor agora — sem base64
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
   secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 8 * 60 * 60 * 1000 }
+  cookie: { maxAge: 8 * 60 * 60 * 1000 },
 }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(UPLOADS_DIR)); // serve os arquivos de imagem
 
 function requireMonitor(req, res, next) {
   if (req.session?.isMonitor) return next();
@@ -68,50 +116,48 @@ app.post('/api/login', (req, res) => {
     res.status(401).json({ error: 'Usuário ou senha incorretos' });
   }
 });
+app.post('/api/logout', (req, res) => req.session.destroy(() => res.json({ ok: true })));
+app.get('/api/me', (req, res) => res.json({ isMonitor: !!req.session?.isMonitor }));
 
-app.post('/api/logout', (req, res) => {
-  req.session.destroy(() => res.json({ ok: true }));
-});
-
-app.get('/api/me', (req, res) => {
-  res.json({ isMonitor: !!req.session?.isMonitor });
-});
-
-// ── Modules ───────────────────────────────────────────────
+// ── Módulos ───────────────────────────────────────────────
 app.get('/api/modules', (req, res) => {
-  const rows = db.prepare('SELECT * FROM modules ORDER BY position ASC, id ASC').all();
-  // Adiciona contagem de questões por módulo
-  const count = db.prepare('SELECT module_id, COUNT(*) as n FROM questions GROUP BY module_id');
+  const rows   = db.prepare('SELECT * FROM modules ORDER BY position ASC, id ASC').all();
   const counts = {};
-  count.all().forEach(r => { counts[r.module_id] = r.n; });
+  db.prepare('SELECT module_id, COUNT(*) as n FROM questions GROUP BY module_id')
+    .all().forEach(r => { counts[r.module_id] = r.n; });
   res.json(rows.map(m => ({ ...m, question_count: counts[m.id] || 0 })));
 });
-
 app.post('/api/modules', requireMonitor, (req, res) => {
   const name = (req.body.name || '').trim();
   if (!name) return res.status(400).json({ error: 'Nome obrigatório' });
-  const { m } = db.prepare('SELECT COALESCE(MAX(position), -1) as m FROM modules').get();
-  const r = db.prepare('INSERT INTO modules (name, position) VALUES (?, ?)').run(name, m + 1);
-  res.json(db.prepare('SELECT * FROM modules WHERE id = ?').get(r.lastInsertRowid));
+  const { m } = db.prepare('SELECT COALESCE(MAX(position),-1) as m FROM modules').get();
+  const r = db.prepare('INSERT INTO modules (name, position) VALUES (?,?)').run(name, m + 1);
+  res.json(db.prepare('SELECT * FROM modules WHERE id=?').get(r.lastInsertRowid));
 });
-
 app.put('/api/modules/:id', requireMonitor, (req, res) => {
   const name = (req.body.name || '').trim();
   if (!name) return res.status(400).json({ error: 'Nome obrigatório' });
-  db.prepare('UPDATE modules SET name = ? WHERE id = ?').run(name, req.params.id);
-  res.json(db.prepare('SELECT * FROM modules WHERE id = ?').get(req.params.id));
+  db.prepare('UPDATE modules SET name=? WHERE id=?').run(name, req.params.id);
+  res.json(db.prepare('SELECT * FROM modules WHERE id=?').get(req.params.id));
 });
-
 app.delete('/api/modules/:id', requireMonitor, (req, res) => {
-  db.prepare('UPDATE questions SET module_id = NULL WHERE module_id = ?').run(req.params.id);
-  db.prepare('DELETE FROM modules WHERE id = ?').run(req.params.id);
+  db.prepare('UPDATE questions SET module_id=NULL WHERE module_id=?').run(req.params.id);
+  db.prepare('DELETE FROM modules WHERE id=?').run(req.params.id);
   res.json({ ok: true });
 });
 
 // ── Questions ─────────────────────────────────────────────
+function rowToQuestion(row) {
+  // image_url tem prioridade; fallback para base64 legado
+  return { ...row, image_data: row.image_url || row.image_data };
+}
+
 app.get('/api/questions', (req, res) => {
-  const { modules } = req.query; // ex: "1,3,5"
-  let sql = 'SELECT id, position, image_data, filename, pin_x, pin_y, answer, notes, module_id FROM questions';
+  const { modules } = req.query;
+  let sql = `SELECT id, position,
+    CASE WHEN image_url != '' THEN image_url ELSE image_data END as image_data,
+    filename, pin_x, pin_y, answer, notes, module_id
+    FROM questions`;
   const params = [];
   if (modules) {
     const ids = modules.split(',').map(Number).filter(Boolean);
@@ -124,30 +170,72 @@ app.get('/api/questions', (req, res) => {
   res.json(db.prepare(sql).all(...params));
 });
 
-app.post('/api/questions', requireMonitor, (req, res) => {
+// Upload de arquivo real (multipart/form-data)
+app.post('/api/questions', requireMonitor, upload.single('image'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Arquivo de imagem obrigatório' });
+  const imageUrl = `/uploads/${req.file.filename}`;
+  const { module_id, pin_x, pin_y, answer, notes } = req.body;
+  const { m } = db.prepare('SELECT COALESCE(MAX(position),-1) as m FROM questions').get();
+  const result = db.prepare(
+    `INSERT INTO questions (position, image_url, image_data, filename, pin_x, pin_y, answer, notes, module_id)
+     VALUES (?,?,?,?,?,?,?,?,?)`
+  ).run(m + 1, imageUrl, '', req.file.originalname, pin_x ?? null, pin_y ?? null,
+        answer || '', notes || '', module_id ? parseInt(module_id) : null);
+  res.json(rowToQuestion(db.prepare('SELECT * FROM questions WHERE id=?').get(result.lastInsertRowid)));
+});
+
+// Importação via JSON (base64) — para arquivos exportados
+app.post('/api/questions/import-json', requireMonitor, (req, res) => {
   const { image_data, filename, pin_x, pin_y, answer, notes, module_id } = req.body;
   if (!image_data) return res.status(400).json({ error: 'image_data obrigatório' });
-  const { m } = db.prepare('SELECT COALESCE(MAX(position), -1) as m FROM questions').get();
+
+  // Converte base64 para arquivo
+  let imageUrl = '';
+  try {
+    const match = image_data.match(/^data:([^;]+);base64,(.+)$/s);
+    if (match) {
+      const ext = (match[1].split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+      const fname = `img-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      fs.writeFileSync(path.join(UPLOADS_DIR, fname), Buffer.from(match[2], 'base64'));
+      imageUrl = `/uploads/${fname}`;
+    }
+  } catch {}
+
+  const { m } = db.prepare('SELECT COALESCE(MAX(position),-1) as m FROM questions').get();
   const result = db.prepare(
-    'INSERT INTO questions (position, image_data, filename, pin_x, pin_y, answer, notes, module_id) VALUES (?,?,?,?,?,?,?,?)'
-  ).run(m + 1, image_data, filename || '', pin_x ?? null, pin_y ?? null, answer || '', notes || '', module_id ?? null);
-  res.json(db.prepare('SELECT * FROM questions WHERE id = ?').get(result.lastInsertRowid));
+    `INSERT INTO questions (position, image_url, image_data, filename, pin_x, pin_y, answer, notes, module_id)
+     VALUES (?,?,?,?,?,?,?,?,?)`
+  ).run(m + 1, imageUrl, imageUrl ? '' : image_data, filename || '',
+        pin_x ?? null, pin_y ?? null, answer || '', notes || '',
+        module_id ? parseInt(module_id) : null);
+  res.json(rowToQuestion(db.prepare('SELECT * FROM questions WHERE id=?').get(result.lastInsertRowid)));
 });
 
 app.put('/api/questions/:id', requireMonitor, (req, res) => {
   const { pin_x, pin_y, answer, notes, module_id } = req.body;
   db.prepare(
     'UPDATE questions SET pin_x=?, pin_y=?, answer=?, notes=?, module_id=? WHERE id=?'
-  ).run(pin_x ?? null, pin_y ?? null, answer || '', notes || '', module_id ?? null, req.params.id);
-  res.json(db.prepare('SELECT * FROM questions WHERE id=?').get(req.params.id));
+  ).run(pin_x ?? null, pin_y ?? null, answer || '', notes || '',
+        module_id !== undefined ? (module_id ? parseInt(module_id) : null) : null,
+        req.params.id);
+  res.json(rowToQuestion(db.prepare('SELECT * FROM questions WHERE id=?').get(req.params.id)));
 });
 
+function deleteImageFile(imageUrl) {
+  if (!imageUrl?.startsWith('/uploads/')) return;
+  try { fs.unlinkSync(path.join(UPLOADS_DIR, path.basename(imageUrl))); } catch {}
+}
+
 app.delete('/api/questions', requireMonitor, (req, res) => {
+  db.prepare("SELECT image_url FROM questions WHERE image_url != ''").all()
+    .forEach(r => deleteImageFile(r.image_url));
   db.prepare('DELETE FROM questions').run();
   res.json({ ok: true });
 });
 
 app.delete('/api/questions/:id', requireMonitor, (req, res) => {
+  const q = db.prepare('SELECT image_url FROM questions WHERE id=?').get(req.params.id);
+  deleteImageFile(q?.image_url);
   db.prepare('DELETE FROM questions WHERE id=?').run(req.params.id);
   res.json({ ok: true });
 });
@@ -158,18 +246,14 @@ app.post('/api/questions/reorder', requireMonitor, (req, res) => {
   try {
     req.body.order.forEach(({ id, position }) => upd.run(position, id));
     db.exec('COMMIT');
-  } catch (e) {
-    db.exec('ROLLBACK');
-    throw e;
-  }
+  } catch (e) { db.exec('ROLLBACK'); throw e; }
   res.json({ ok: true });
 });
 
-// ── Page routes ───────────────────────────────────────────
+// ── Páginas ───────────────────────────────────────────────
 ['painel', 'simulacao', 'login'].forEach(page => {
   app.get(`/${page}`, (_, res) =>
-    res.sendFile(path.join(__dirname, `public/${page}.html`))
-  );
+    res.sendFile(path.join(__dirname, `public/${page}.html`)));
 });
 
 app.listen(PORT, () => console.log(`Servidor em http://localhost:${PORT}`));

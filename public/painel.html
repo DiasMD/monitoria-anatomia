@@ -765,26 +765,25 @@ async function handleFiles(files) {
   const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
   if (!imageFiles.length) { toast('Nenhuma imagem selecionada.'); return; }
 
-  const moduleId = $('uploadModuleSelect').value ? parseInt($('uploadModuleSelect').value) : null;
-
+  const moduleId = $('uploadModuleSelect').value || null;
   let added = 0;
+
   for (const file of imageFiles) {
     try {
-      const dataUrl = await readFileAsDataURL(file);
-      const res = await fetch('/api/questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_data: dataUrl, filename: file.name, module_id: moduleId }),
-      });
+      // Envia o arquivo diretamente — sem conversão para base64
+      const form = new FormData();
+      form.append('image', file);
+      if (moduleId) form.append('module_id', moduleId);
+
+      const res = await fetch('/api/questions', { method: 'POST', body: form });
       if (!res.ok) { toast('Erro ao salvar imagem no servidor.'); continue; }
-      const q = await res.json();
-      state.questions.push(normalizeQuestion(q));
+      state.questions.push(normalizeQuestion(await res.json()));
       added++;
     } catch {
       toast('Erro ao processar arquivo.');
     }
   }
-  await loadModules(); // atualiza contagens
+  await loadModules();
   renderGrid();
   if (added > 0) toast(`${added} ${added === 1 ? 'imagem adicionada' : 'imagens adicionadas'}.`);
 }
@@ -1206,7 +1205,7 @@ $('importInput').addEventListener('change', (e) => {
       state.questions = [];
 
       for (const q of data.questions) {
-        const res = await fetch('/api/questions', {
+        const res = await fetch('/api/questions/import-json', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
