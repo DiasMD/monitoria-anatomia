@@ -149,9 +149,18 @@ body {
   letter-spacing: 0.01em;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
+  body { padding: 32px 20px; }
+  .logo { width: 120px; height: 120px; margin-bottom: 24px; }
+  .eyebrow { font-size: 9.5px; letter-spacing: 0.22em; }
   .title { font-size: 36px; }
-  .cards { grid-template-columns: 1fr; max-width: 300px; }
+  .rule { margin: 16px auto 28px; }
+  .monitors { font-size: 18px; margin-bottom: 36px; }
+  .cards { grid-template-columns: 1fr; max-width: 320px; gap: 14px; }
+  .card { padding: 36px 28px; gap: 12px; flex-direction: row; align-items: center; text-align: left; }
+  .card-icon { width: 52px; height: 52px; flex-shrink: 0; }
+  .card-title { font-size: 26px; }
+  .card-sub { font-size: 12px; }
 }
 </style>
 </head>

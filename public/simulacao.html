@@ -111,6 +111,68 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
 .end-btn:hover { background:var(--gold); color:var(--ink); }
 .end-btn.primary { background:var(--gold); color:var(--ink); }
 .end-btn.primary:hover { background:var(--gold-soft); border-color:var(--gold-soft); }
+/* ===== MOBILE ===== */
+@media (max-width: 767px) {
+  /* --- Header --- */
+  .header { padding: 12px 16px; }
+  .header-inner { gap: 12px; }
+  .emblem { width: 54px; height: 54px; }
+  .eyebrow { font-size: 9px; letter-spacing: 0.2em; }
+  .header-title { font-size: 20px; }
+  .monitors-names { font-size: 15px; }
+  .header-sub { display: none; }
+  .back-btn { padding: 7px 12px; font-size: 11px; }
+  .back-btn svg { display: none; }
+
+  /* --- Setup screen --- */
+  .setup { min-height: calc(100vh - 120px); padding: 32px 20px; }
+  .setup-icon { width: 80px; height: 80px; margin-bottom: 20px; }
+  .setup-title { font-size: 34px; }
+  .setup-count { font-size: 14px; margin-bottom: 28px; }
+  .setup-rule { margin-bottom: 24px; }
+  .setup-time-row { gap: 10px; }
+  .setup-time-row label { font-size: 12px; }
+  .setup-time-row input { font-size: 18px; padding: 10px 14px; width: 80px; }
+  .btn-start { font-size: 15px; padding: 18px 40px; margin-top: 4px; }
+
+  /* --- Loading / Empty --- */
+  .state-msg { padding: 60px 20px; }
+  .state-msg .msg-title { font-size: 22px; }
+
+  /* --- Apresentação: header compacto --- */
+  .pres-header { padding: 8px 12px; gap: 10px; }
+  .pres-emblem { width: 32px; height: 32px; }
+  .pres-title { font-size: 13px; }
+  .pres-title span { display: none; }
+  .pres-counter { font-size: 13px; white-space: nowrap; }
+  .pres-timer { font-size: 26px; min-width: 72px; }
+
+  /* --- Imagem maximizada --- */
+  .pres-stage { padding: 8px; }
+  .pres-image-wrap img { max-height: calc(100vh - 190px); }
+
+  /* --- Resposta --- */
+  .pres-answer {
+    font-size: 20px; padding: 14px 16px;
+    bottom: 96px; max-width: 94%;
+    border-radius: 6px;
+  }
+
+  /* --- Controles em grade 3×2 --- */
+  .pres-controls { padding: 8px 10px; gap: 6px; flex-wrap: wrap; }
+  .pres-btn {
+    flex: 1 1 calc(33.33% - 6px);
+    padding: 14px 4px; font-size: 11px;
+    justify-content: center; min-width: 0;
+  }
+  .pres-btn svg { flex-shrink: 0; }
+
+  /* --- Tela final --- */
+  .end-title { font-size: 44px; }
+  .end-sub { font-size: 14px; }
+  .end-actions { flex-direction: column; align-items: center; }
+  .end-btn { width: 100%; max-width: 280px; }
+}
 </style>
 </head>
 <body>
@@ -393,6 +455,18 @@ document.addEventListener('keydown', (e) => {
     if (confirm('Encerrar a simulação?')) exitPresentation();
   }
 });
+
+// ===== SWIPE NA APRESENTAÇÃO =====
+let _sx = 0, _sy = 0;
+document.querySelector('.pres-stage').addEventListener('touchstart', e => {
+  _sx = e.touches[0].clientX; _sy = e.touches[0].clientY;
+}, { passive: true });
+document.querySelector('.pres-stage').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - _sx;
+  const dy = e.changedTouches[0].clientY - _sy;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 55)
+    dx < 0 ? nextQuestion() : prevQuestion();
+}, { passive: true });
 
 loadQuestions();
 </script>

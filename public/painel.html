@@ -187,13 +187,106 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
 
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
-@media (max-width: 768px) {
-  .header { padding: 18px 20px; }
-  .header-title { font-size: 24px; }
-  .toolbar { padding: 12px 20px; }
-  .main { padding: 24px 20px 60px; }
-  .modal-body { grid-template-columns: 1fr; }
-  .editor-sidebar { border-left: none; border-top: 1px solid var(--rule); }
+/* ===== MOBILE ===== */
+@media (max-width: 767px) {
+  /* --- Header compacto --- */
+  .header { padding: 12px 16px; }
+  .header-inner { gap: 12px; }
+  .emblem { width: 54px; height: 54px; }
+  .header-title { font-size: 20px; }
+  .eyebrow { font-size: 9px; letter-spacing: 0.2em; }
+  .monitors-names { font-size: 15px; }
+  .header-sub { display: none; }
+  .header-actions { margin-left: 0; }
+  .btn-logout { padding: 7px 12px; font-size: 11px; }
+
+  /* --- Toolbar vira barra fixa no fundo --- */
+  .toolbar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    z-index: 50; padding: 10px 16px;
+    border-top: 2px solid var(--gold); border-bottom: none;
+    box-shadow: 0 -4px 20px rgba(10,31,61,0.12);
+  }
+  .toolbar-inner { flex-wrap: nowrap; gap: 8px; justify-content: space-between; }
+  #exportBtn, #importBtn, #clearBtn { display: none; }
+  .toolbar label { font-size: 10px; }
+  .toolbar input[type="number"] { width: 52px; font-size: 14px; }
+  .btn-primary { padding: 10px 16px; font-size: 13px; }
+
+  /* --- Conteúdo com espaço para barra fixa --- */
+  .main { padding: 20px 14px 100px; }
+  .section-title { font-size: 20px; }
+
+  /* --- Upload zone adaptado para toque --- */
+  .upload-zone { padding: 36px 20px; }
+  .upload-title { font-size: 18px; }
+  .upload-sub { font-size: 12px; }
+  .upload-icon { width: 40px; height: 40px; margin-bottom: 12px; }
+
+  /* --- Grid 2 colunas --- */
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .card-body { padding: 10px 10px 8px; }
+  .card-label { font-size: 11px; min-height: 26px; margin-bottom: 8px; }
+  .card-number { width: 26px; height: 26px; font-size: 14px; }
+  .card-status { font-size: 9px; padding: 3px 6px; }
+  .card-btn { font-size: 10px; padding: 5px 2px; }
+
+  /* --- Editor modal tela cheia --- */
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal {
+    max-width: 100%; max-height: 100vh; height: 100%;
+    border-radius: 0; border-top: 3px solid var(--gold);
+  }
+  .modal-header { padding: 12px 16px; }
+  .modal-title { font-size: 16px; }
+  .modal-body {
+    grid-template-columns: 1fr;
+    display: flex; flex-direction: column;
+    overflow-y: auto; flex: 1;
+  }
+  .editor-image-area {
+    min-height: 44vw; max-height: 52vw;
+    flex-shrink: 0;
+  }
+  .editor-image-wrap img { max-height: 48vw; }
+  .editor-sidebar {
+    border-left: none; border-top: 1px solid var(--rule);
+    padding: 14px 16px; gap: 12px;
+  }
+  .field-textarea { min-height: 60px; }
+  .sidebar-actions { flex-direction: row; margin-top: 8px; }
+
+  /* --- Modo apresentação --- */
+  .pres-header { padding: 8px 14px; gap: 10px; }
+  .pres-emblem { width: 32px; height: 32px; }
+  .pres-title { font-size: 13px; }
+  .pres-title span { display: none; } /* oculta linha dos monitores */
+  .pres-counter { font-size: 13px; white-space: nowrap; }
+  .pres-timer { font-size: 26px; min-width: 72px; }
+
+  .pres-stage { padding: 8px; }
+  .pres-image-wrap img { max-height: calc(100vh - 195px); }
+
+  .pres-answer {
+    font-size: 20px; padding: 14px 18px;
+    bottom: 96px; max-width: 92%;
+  }
+
+  /* Controles em 2 linhas de 3 */
+  .pres-controls { padding: 8px 10px; gap: 6px; flex-wrap: wrap; }
+  .pres-btn {
+    flex: 1 1 calc(33.33% - 6px);
+    padding: 14px 4px; font-size: 11px;
+    justify-content: center;
+    min-width: 0;
+  }
+  .pres-btn svg { flex-shrink: 0; }
+
+  /* --- Tela final --- */
+  .end-title { font-size: 44px; }
+  .end-sub { font-size: 14px; }
+  .end-actions { flex-direction: column; align-items: center; }
+  .end-btn { width: 100%; max-width: 280px; }
 }
 </style>
 </head>
@@ -254,7 +347,7 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
     <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
-    <div class="upload-title">Clique ou arraste as imagens do atlas</div>
+    <div class="upload-title" id="uploadTitle">Clique ou arraste as imagens do atlas</div>
     <div class="upload-sub">JPG, PNG ou WebP · selecione várias de uma vez</div>
     <input type="file" id="fileInput" accept="image/*" multiple>
   </div>
@@ -630,14 +723,21 @@ function updateEditorPin() {
   }
 }
 
-$('editorImage').addEventListener('click', (e) => {
-  const img  = e.target;
+function setPin(clientX, clientY) {
+  const img  = $('editorImage');
   const rect = img.getBoundingClientRect();
   const q = state.questions[state.currentEditorIdx];
-  q.pinX = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width)  * 100));
-  q.pinY = Math.max(0, Math.min(100, ((e.clientY - rect.top)  / rect.height) * 100));
+  q.pinX = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width)  * 100));
+  q.pinY = Math.max(0, Math.min(100, ((clientY - rect.top)  / rect.height) * 100));
   updateEditorPin();
-});
+}
+$('editorImage').addEventListener('click', (e) => setPin(e.clientX, e.clientY));
+// Suporte a toque no mobile
+$('editorImage').addEventListener('touchend', (e) => {
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  setPin(t.clientX, t.clientY);
+}, { passive: false });
 
 $('removePinBtn').addEventListener('click', () => {
   const q = state.questions[state.currentEditorIdx];
@@ -910,6 +1010,23 @@ $('clearBtn').addEventListener('click', async () => {
     toast('Painel limpo.');
   }
 });
+
+// ===== SWIPE NA APRESENTAÇÃO =====
+let _sx = 0, _sy = 0;
+document.querySelector('.pres-stage').addEventListener('touchstart', e => {
+  _sx = e.touches[0].clientX; _sy = e.touches[0].clientY;
+}, { passive: true });
+document.querySelector('.pres-stage').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - _sx;
+  const dy = e.changedTouches[0].clientY - _sy;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 55)
+    dx < 0 ? nextQuestion() : prevQuestion();
+}, { passive: true });
+
+// Adapta texto do upload para mobile
+if ('ontouchstart' in window) {
+  $('uploadTitle').textContent = 'Toque para selecionar do álbum';
+}
 
 // ===== INIT =====
 checkAuth().then(loadFromServer);
