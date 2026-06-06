@@ -3,6 +3,7 @@ const express = require('express');
 const session = require('express-session');
 const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,6 +14,7 @@ const SESSION_SECRET = process.env.SESSION_SECRET || 'ufma-anatomia-secret-2024'
 const DB_PATH        = process.env.DB_PATH        || path.join(__dirname, 'data.db');
 
 // ── Database ──────────────────────────────────────────────
+fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const db = new DatabaseSync(DB_PATH);
 db.exec('PRAGMA journal_mode = WAL');
 db.exec(`
