@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anatomia Topográfica — UFMA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0A1F3D;
+  --paper: #FAF7F0;
+  --gold: #B8924A;
+  --gold-soft: #D4B47C;
+  --muted: rgba(212,180,124,0.65);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  font-family: 'Manrope', sans-serif;
+  background: var(--ink);
+  color: var(--paper);
+  -webkit-font-smoothing: antialiased;
+}
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  background:
+    radial-gradient(ellipse at top center, rgba(184,146,74,0.12) 0%, transparent 55%),
+    radial-gradient(ellipse at bottom right, rgba(10,31,61,0.8) 0%, transparent 60%),
+    var(--ink);
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 620px;
+  width: 100%;
+}
+
+.logo {
+  width: 148px;
+  height: 148px;
+  object-fit: contain;
+  margin-bottom: 32px;
+  filter: drop-shadow(0 4px 20px rgba(0,0,0,0.55));
+}
+
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 52px;
+  font-weight: 600;
+  line-height: 1.08;
+  color: var(--paper);
+  margin-bottom: 6px;
+}
+
+.title em {
+  font-style: italic;
+  color: var(--gold-soft);
+}
+
+.rule {
+  width: 48px;
+  height: 2px;
+  background: var(--gold);
+  margin: 22px auto;
+  opacity: 0.7;
+}
+
+.monitors {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  color: var(--muted);
+  margin-bottom: 52px;
+  letter-spacing: 0.01em;
+}
+.monitors strong { color: var(--paper); font-weight: 600; }
+
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  width: 100%;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 44px 28px;
+  border: 1px solid rgba(184,146,74,0.2);
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--paper);
+  background: rgba(255,255,255,0.025);
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  background: rgba(184,146,74,0.08);
+  border-color: rgba(184,146,74,0.55);
+  transform: translateY(-3px);
+  box-shadow: 0 14px 36px rgba(0,0,0,0.35);
+}
+
+.card.monitor {
+  border-color: rgba(184,146,74,0.35);
+  background: rgba(184,146,74,0.04);
+}
+
+.card-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(184,146,74,0.12);
+  border: 1px solid rgba(184,146,74,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 30px;
+  font-weight: 600;
+}
+
+.card-sub {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+}
+
+@media (max-width: 480px) {
+  .title { font-size: 36px; }
+  .cards { grid-template-columns: 1fr; max-width: 300px; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <img class="logo" src="logo ufma.png" alt="Logo UFMA">
+  <div class="eyebrow">Universidade Federal do Maranhão · Curso de Medicina</div>
+  <h1 class="title">Monitoria de Anatomia <em>Topográfica</em></h1>
+  <div class="rule"></div>
+  <div class="monitors">Monitores: <strong>Breno Dias</strong> &amp; <strong>Isabela Nogueira</strong></div>
+
+  <div class="cards">
+    <a href="/simulacao" class="card">
+      <div class="card-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gold-soft)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+        </svg>
+      </div>
+      <div class="card-title">Sou Aluno</div>
+      <div class="card-sub">Acessar a simulação da prova prática</div>
+    </a>
+
+    <a href="/login" class="card monitor">
+      <div class="card-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gold-soft)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+      <div class="card-title">Sou Monitor</div>
+      <div class="card-sub">Gerenciar questões e configurar a simulação</div>
+    </a>
+  </div>
+</div>
+</body>
+</html>

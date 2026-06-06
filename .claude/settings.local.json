@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/breno -name \"*.png\" -o -name \"*.jpg\" -o -name \"*.jpeg\" -o -name \"*.svg\" -o -name \"*.webp\" 2>/dev/null | grep -i \"ufma\\\\|logo\\\\|brasao\\\\|emblem\" | head -20)",
+      "Read(//Users/breno/**)",
+      "WebFetch(domain:portais.ufma.br)"
+    ]
+  }
+}

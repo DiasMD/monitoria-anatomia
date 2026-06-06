@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acesso Monitor — UFMA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0A1F3D;
+  --paper: #FAF7F0;
+  --gold: #B8924A;
+  --gold-soft: #D4B47C;
+  --muted: rgba(212,180,124,0.65);
+  --err: #D6263A;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  font-family: 'Manrope', sans-serif;
+  background: var(--ink);
+  color: var(--paper);
+  -webkit-font-smoothing: antialiased;
+}
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  background:
+    radial-gradient(ellipse at top center, rgba(184,146,74,0.1) 0%, transparent 55%),
+    var(--ink);
+}
+
+.box {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logo {
+  width: 110px;
+  height: 110px;
+  object-fit: contain;
+  margin-bottom: 28px;
+  filter: drop-shadow(0 4px 16px rgba(0,0,0,0.5));
+}
+
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 38px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 4px;
+}
+.title em { font-style: italic; color: var(--gold-soft); }
+
+.sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 36px;
+  text-align: center;
+}
+
+.form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+  font-weight: 600;
+}
+
+.field input {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(184,146,74,0.25);
+  border-radius: 3px;
+  color: var(--paper);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.field input:focus { border-color: var(--gold); }
+.field input::placeholder { color: rgba(250,247,240,0.3); }
+
+.btn-submit {
+  margin-top: 6px;
+  width: 100%;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 14px;
+  background: var(--gold);
+  color: var(--ink);
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: background 0.15s ease;
+}
+.btn-submit:hover { background: var(--gold-soft); }
+.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.error {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #ff7070;
+  text-align: center;
+  display: none;
+}
+.error.show { display: block; }
+
+.back {
+  margin-top: 28px;
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+  letter-spacing: 0.08em;
+  transition: color 0.15s ease;
+}
+.back:hover { color: var(--gold-soft); }
+</style>
+</head>
+<body>
+<div class="box">
+  <img class="logo" src="logo ufma.png" alt="Logo UFMA">
+  <div class="eyebrow">Área Restrita</div>
+  <h1 class="title">Acesso <em>Monitor</em></h1>
+  <div class="sub">Insira suas credenciais para gerenciar a simulação</div>
+
+  <form class="form" id="loginForm" autocomplete="off">
+    <div class="field">
+      <label for="username">Usuário</label>
+      <input type="text" id="username" name="username" placeholder="monitores.ufma" autocomplete="username" required>
+    </div>
+    <div class="field">
+      <label for="password">Senha</label>
+      <input type="password" id="password" name="password" placeholder="••••••••••••" autocomplete="current-password" required>
+    </div>
+    <button type="submit" class="btn-submit" id="submitBtn">Entrar</button>
+    <div class="error" id="errMsg">Usuário ou senha incorretos. Tente novamente.</div>
+  </form>
+
+  <a href="/" class="back">← Voltar ao início</a>
+</div>
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const err = document.getElementById('errMsg');
+  err.classList.remove('show');
+  btn.disabled = true;
+  btn.textContent = 'Verificando…';
+
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('username').value.trim(),
+        password: document.getElementById('password').value,
+      }),
+    });
+    if (res.ok) {
+      window.location.href = '/painel';
+    } else {
+      err.classList.add('show');
+      btn.disabled = false;
+      btn.textContent = 'Entrar';
+    }
+  } catch {
+    err.textContent = 'Erro de conexão. Tente novamente.';
+    err.classList.add('show');
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+  }
+});
+</script>
+</body>
+</html>

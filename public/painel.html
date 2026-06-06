@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Monitor — Anatomia UFMA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0A1F3D; --ink-soft: #1F3A5F;
+  --paper: #FAF7F0; --paper-soft: #F2EDE0;
+  --gold: #B8924A; --gold-soft: #D4B47C;
+  --rule: #D9D1BD; --rule-strong: #B8AE94;
+  --pin: #D6263A; --pin-glow: rgba(214,38,58,0.35);
+  --muted: #6B6655; --success: #2E6B3F;
+  --shadow-sm: 0 1px 2px rgba(10,31,61,0.06);
+  --shadow-md: 0 4px 14px rgba(10,31,61,0.08);
+  --shadow-lg: 0 12px 36px rgba(10,31,61,0.14);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(--paper); color: var(--ink); -webkit-font-smoothing: antialiased; }
+body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.05), transparent 50%), radial-gradient(ellipse at bottom right, rgba(10,31,61,0.04), transparent 50%); min-height: 100vh; display: flex; flex-direction: column; }
+.serif { font-family: 'Cormorant Garamond', Georgia, serif; }
+
+/* HEADER */
+.header { background: var(--ink); color: var(--paper); padding: 24px 48px; border-bottom: 4px solid var(--gold); position: relative; }
+.header::before { content: ''; position: absolute; inset: 0; background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 24px); pointer-events: none; }
+.header-inner { display: flex; align-items: center; gap: 20px; max-width: 1400px; margin: 0 auto; position: relative; }
+.emblem { flex-shrink: 0; width: 90px; height: 90px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4)); }
+.header-text { flex: 1; }
+.eyebrow { font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold-soft); font-weight: 500; margin-bottom: 4px; }
+.header-title { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 600; line-height: 1.05; }
+.header-title .accent { font-style: italic; color: var(--gold-soft); }
+.header-monitors { margin-top: 10px; display: flex; align-items: center; gap: 10px; }
+.monitors-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em; color: var(--gold-soft); font-weight: 600; white-space: nowrap; }
+.monitors-names { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; color: var(--paper); }
+.monitors-sep { color: var(--gold-soft); margin: 0 5px; font-weight: 300; }
+.header-sub { margin-top: 4px; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(212,180,124,0.65); }
+.header-actions { display: flex; gap: 10px; align-items: center; margin-left: auto; }
+.btn-logout { font-family: inherit; font-size: 12px; font-weight: 500; padding: 9px 16px; border: 1px solid rgba(212,180,124,0.4); background: transparent; color: var(--gold-soft); cursor: pointer; border-radius: 2px; transition: all 0.15s ease; letter-spacing: 0.05em; text-transform: uppercase; }
+.btn-logout:hover { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+
+/* TOOLBAR */
+.toolbar { background: var(--paper-soft); border-bottom: 1px solid var(--rule); padding: 14px 48px; }
+.toolbar-inner { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.btn { font-family: inherit; font-size: 13px; font-weight: 500; padding: 10px 18px; border: 1px solid var(--rule-strong); background: var(--paper); color: var(--ink); cursor: pointer; border-radius: 2px; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 8px; letter-spacing: 0.02em; white-space: nowrap; }
+.btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn:disabled:hover { background: var(--paper); color: var(--ink); border-color: var(--rule-strong); }
+.btn-primary { background: var(--ink); color: var(--paper); border-color: var(--ink); padding: 10px 22px; }
+.btn-primary:hover { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+.btn-icon { width: 18px; height: 18px; stroke-width: 1.8; }
+.toolbar .spacer { flex: 1; }
+.toolbar input[type="number"] { font-family: inherit; font-size: 13px; padding: 9px 12px; border: 1px solid var(--rule-strong); background: var(--paper); width: 64px; border-radius: 2px; text-align: center; color: var(--ink); font-weight: 500; }
+.toolbar label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500; }
+
+/* MAIN */
+.main { flex: 1; padding: 40px 48px 80px; max-width: 1400px; margin: 0 auto; width: 100%; }
+.section-title { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 600; margin-bottom: 4px; }
+.section-rule { width: 32px; height: 2px; background: var(--gold); margin-bottom: 24px; }
+
+/* UPLOAD */
+.upload-zone { border: 2px dashed var(--rule-strong); background: rgba(255,255,255,0.4); padding: 52px 32px; text-align: center; border-radius: 4px; cursor: pointer; transition: all 0.2s ease; margin-bottom: 40px; }
+.upload-zone:hover, .upload-zone.dragover { border-color: var(--ink); background: rgba(255,255,255,0.7); }
+.upload-icon { width: 48px; height: 48px; color: var(--ink-soft); margin: 0 auto 16px; stroke-width: 1.2; opacity: 0.45; }
+.upload-zone:hover .upload-icon { opacity: 0.8; }
+.upload-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+.upload-sub { font-size: 13px; color: var(--muted); }
+#fileInput { display: none; }
+
+/* COUNTER */
+.counter-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; }
+.counter { font-family: 'Cormorant Garamond', serif; font-size: 18px; color: var(--muted); font-style: italic; }
+.counter strong { color: var(--ink); font-weight: 600; font-style: normal; }
+
+/* GRID */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
+.card { background: var(--paper); border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; transition: all 0.18s ease; position: relative; box-shadow: var(--shadow-sm); }
+.card:hover { border-color: var(--ink); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.card-image-wrap { aspect-ratio: 4/3; background: var(--paper-soft); position: relative; overflow: hidden; cursor: pointer; }
+.card-image-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.card-pin { position: absolute; pointer-events: none; transform: translate(-50%,-100%); }
+.card-number { position: absolute; top: 8px; left: 8px; background: var(--ink); color: var(--paper); font-family: 'Cormorant Garamond', serif; font-size: 16px; font-weight: 600; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 2; }
+.card-status { position: absolute; top: 8px; right: 8px; font-size: 10px; font-weight: 600; padding: 4px 8px; border-radius: 2px; letter-spacing: 0.08em; text-transform: uppercase; z-index: 2; }
+.status-pending { background: rgba(214,38,58,0.92); color: white; }
+.status-ready { background: rgba(46,107,63,0.92); color: white; }
+.card-body { padding: 14px 14px 12px; }
+.card-label { font-size: 13px; color: var(--ink); line-height: 1.4; margin-bottom: 10px; min-height: 36px; }
+.card-label.empty { color: var(--muted); font-style: italic; }
+.card-actions { display: flex; gap: 6px; border-top: 1px solid var(--rule); padding-top: 10px; }
+.card-btn { flex: 1; font-family: inherit; font-size: 11px; padding: 6px 8px; border: none; background: transparent; color: var(--muted); cursor: pointer; border-radius: 2px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; transition: all 0.15s ease; }
+.card-btn:hover { background: var(--paper-soft); color: var(--ink); }
+.card-btn.danger:hover { background: #fdecee; color: var(--pin); }
+
+/* EMPTY */
+.empty-state { text-align: center; padding: 80px 32px; color: var(--muted); }
+.empty-state .title { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 500; font-style: italic; color: var(--ink-soft); margin-bottom: 8px; }
+.empty-state .sub { font-size: 14px; }
+
+/* LOADING */
+.loading-state { text-align: center; padding: 80px 32px; color: var(--muted); }
+.loading-state .spin { width: 36px; height: 36px; border: 3px solid var(--rule); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* EDITOR MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(10,31,61,0.55); backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 24px; }
+.modal-overlay.active { display: flex; }
+.modal { background: var(--paper); border-radius: 4px; width: 100%; max-width: 1100px; max-height: 92vh; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); overflow: hidden; border-top: 4px solid var(--gold); }
+.modal-header { padding: 22px 28px; border-bottom: 1px solid var(--rule); display: flex; align-items: center; justify-content: space-between; background: var(--paper-soft); }
+.modal-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; }
+.modal-close { background: transparent; border: 1px solid var(--rule-strong); width: 36px; height: 36px; border-radius: 2px; cursor: pointer; color: var(--ink); display: flex; align-items: center; justify-content: center; transition: all 0.15s ease; }
+.modal-close:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.modal-body { display: grid; grid-template-columns: 1fr 320px; gap: 0; flex: 1; overflow: hidden; }
+.editor-image-area { background: repeating-conic-gradient(var(--paper-soft) 0% 25%, rgba(217,209,189,0.4) 0% 50%) 50%/24px 24px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 400px; cursor: crosshair; }
+.editor-image-wrap { position: relative; max-width: 100%; max-height: 100%; display: inline-block; }
+.editor-image-wrap img { display: block; max-width: 100%; max-height: 70vh; object-fit: contain; }
+.editor-pin { position: absolute; pointer-events: none; transform: translate(-50%, -100%); }
+.editor-sidebar { background: var(--paper); padding: 24px; border-left: 1px solid var(--rule); display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+.field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted); font-weight: 600; margin-bottom: 8px; display: block; }
+.field-help { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 6px; }
+.field-input, .field-textarea { width: 100%; font-family: inherit; font-size: 14px; padding: 10px 12px; border: 1px solid var(--rule-strong); background: var(--paper); border-radius: 2px; color: var(--ink); resize: vertical; }
+.field-input:focus, .field-textarea:focus { outline: none; border-color: var(--ink); }
+.field-textarea { min-height: 80px; }
+.pin-status { padding: 12px 14px; background: var(--paper-soft); border-left: 3px solid var(--gold); border-radius: 2px; font-size: 13px; color: var(--ink); }
+.pin-status.set { border-left-color: var(--success); }
+.pin-status .strong { font-weight: 600; }
+.sidebar-actions { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--rule); display: flex; flex-direction: column; gap: 10px; }
+
+/* PIN */
+.pin-marker { width: 26px; height: 50px; position: relative; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5)); }
+.pin-marker::before { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 3.5px; height: 32px; background: linear-gradient(to bottom, #b0b0b0 0%, #707070 45%, #2a2a2a 100%); border-radius: 0 0 1.5px 1.5px; clip-path: polygon(22% 0%, 78% 0%, 100% 100%, 0% 100%); }
+.pin-marker::after { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 22px; height: 22px; background: radial-gradient(circle at 38% 32%, #ff8080 0%, #d62020 55%, #8a0000 100%); border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.4); box-shadow: inset 0 3px 5px rgba(255,255,255,0.35), inset 0 -3px 5px rgba(0,0,0,0.35), 0 2px 5px rgba(0,0,0,0.35); }
+.pin-marker.large { width: 40px; height: 74px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6)); }
+.pin-marker.large::before { width: 5px; height: 48px; }
+.pin-marker.large::after { width: 32px; height: 32px; border-width: 2px; animation: pulse 1.8s ease-in-out infinite; }
+@keyframes pulse {
+  0%,100% { box-shadow: inset 0 4px 6px rgba(255,255,255,0.35), inset 0 -4px 6px rgba(0,0,0,0.35), 0 3px 8px rgba(0,0,0,0.4), 0 0 20px var(--pin-glow); }
+  50% { box-shadow: inset 0 4px 6px rgba(255,255,255,0.35), inset 0 -4px 6px rgba(0,0,0,0.35), 0 3px 8px rgba(0,0,0,0.4), 0 0 36px var(--pin-glow); }
+}
+
+/* PRESENTATION */
+.presentation { display: none; position: fixed; inset: 0; background: #0a0a0a; z-index: 200; flex-direction: column; }
+.presentation.active { display: flex; }
+.pres-header { padding: 14px 32px; background: rgba(10,10,10,0.95); border-bottom: 1px solid rgba(184,146,74,0.25); display: flex; align-items: center; gap: 20px; color: var(--paper); }
+.pres-emblem { width: 48px; height: 48px; object-fit: contain; }
+.pres-title { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 500; flex: 1; }
+.pres-counter { font-family: 'Cormorant Garamond', serif; font-size: 18px; color: var(--gold-soft); }
+.pres-timer { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 600; min-width: 90px; text-align: right; letter-spacing: 0.02em; }
+.pres-timer.warning { color: #FFB347; }
+.pres-timer.critical { color: var(--pin); }
+.pres-stage { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; padding: 24px; overflow: hidden; }
+.pres-image-wrap { position: relative; max-width: 100%; max-height: 100%; display: inline-block; }
+.pres-image-wrap img { display: block; max-width: 100%; max-height: calc(100vh - 200px); object-fit: contain; }
+.pres-pin { position: absolute; pointer-events: none; transform: translate(-50%,-100%); z-index: 10; }
+.pres-answer { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(10,31,61,0.94); color: var(--paper); padding: 18px 36px; border-radius: 4px; border: 1px solid var(--gold); font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; max-width: 80%; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: none; }
+.pres-answer.show { display: block; animation: fadeUp 0.3s ease; }
+@keyframes fadeUp { from { opacity:0; transform: translateX(-50%) translateY(8px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+.pres-controls { padding: 18px 32px; background: rgba(10,10,10,0.95); border-top: 1px solid rgba(184,146,74,0.25); display: flex; align-items: center; justify-content: center; gap: 12px; }
+.pres-btn { font-family: inherit; font-size: 13px; font-weight: 500; padding: 10px 18px; border: 1px solid rgba(212,180,124,0.4); background: transparent; color: var(--paper); cursor: pointer; border-radius: 2px; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 8px; letter-spacing: 0.02em; }
+.pres-btn:hover { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+.pres-btn.primary { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+.pres-btn.primary:hover { background: var(--gold-soft); }
+.pres-btn.danger:hover { background: var(--pin); border-color: var(--pin); color: white; }
+.progress-track { height: 3px; background: rgba(184,146,74,0.15); position: relative; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--gold); transition: width 1s linear; width: 0%; }
+.progress-fill.warning { background: #FFB347; }
+.progress-fill.critical { background: var(--pin); }
+
+/* END SCREEN */
+.end-screen { display: none; position: fixed; inset: 0; background: var(--ink); z-index: 250; flex-direction: column; align-items: center; justify-content: center; color: var(--paper); padding: 48px; text-align: center; }
+.end-screen.active { display: flex; }
+.end-emblem { width: 130px; height: 130px; object-fit: contain; margin-bottom: 28px; }
+.end-title { font-family: 'Cormorant Garamond', serif; font-size: 64px; font-weight: 600; margin-bottom: 12px; letter-spacing: -0.02em; }
+.end-title .italic { font-style: italic; color: var(--gold-soft); }
+.end-sub { font-size: 16px; color: rgba(250,247,240,0.7); margin-bottom: 40px; max-width: 540px; line-height: 1.6; }
+.end-actions { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+.end-btn { font-family: inherit; font-size: 14px; font-weight: 500; padding: 14px 28px; border: 1px solid var(--gold); background: transparent; color: var(--paper); cursor: pointer; border-radius: 2px; transition: all 0.15s ease; letter-spacing: 0.02em; }
+.end-btn:hover { background: var(--gold); color: var(--ink); }
+.end-btn.primary { background: var(--gold); color: var(--ink); }
+.end-btn.primary:hover { background: var(--gold-soft); border-color: var(--gold-soft); }
+
+/* TOAST */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--paper); padding: 12px 22px; border-radius: 2px; font-size: 13px; font-weight: 500; letter-spacing: 0.02em; opacity: 0; pointer-events: none; transition: all 0.25s ease; z-index: 500; border-left: 3px solid var(--gold); box-shadow: var(--shadow-lg); }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+@media (max-width: 768px) {
+  .header { padding: 18px 20px; }
+  .header-title { font-size: 24px; }
+  .toolbar { padding: 12px 20px; }
+  .main { padding: 24px 20px 60px; }
+  .modal-body { grid-template-columns: 1fr; }
+  .editor-sidebar { border-left: none; border-top: 1px solid var(--rule); }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <img class="emblem" src="logo ufma.png" alt="Logo UFMA">
+    <div class="header-text">
+      <div class="eyebrow">Universidade Federal do Maranhão · Curso de Medicina</div>
+      <h1 class="header-title">Monitoria de Anatomia <span class="accent">Topográfica</span></h1>
+      <div class="header-monitors">
+        <span class="monitors-label">Monitores</span>
+        <span class="monitors-names">Breno Dias<span class="monitors-sep">&amp;</span>Isabela Nogueira</span>
+      </div>
+      <div class="header-sub">Painel do Monitor · Simulação Prova Prática</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-logout" id="logoutBtn">Sair</button>
+    </div>
+  </div>
+</header>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <label for="timeInput">Tempo / questão</label>
+    <input type="number" id="timeInput" value="60" min="5" max="600" step="5">
+    <label style="margin-left:-4px">seg</label>
+    <span class="spacer"></span>
+    <button class="btn" id="exportBtn">
+      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Exportar JSON
+    </button>
+    <button class="btn" id="importBtn">
+      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Importar JSON
+    </button>
+    <input type="file" id="importInput" accept="application/json" style="display:none">
+    <button class="btn" id="clearBtn">
+      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Limpar tudo
+    </button>
+    <button class="btn btn-primary" id="startBtn">
+      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
+      Iniciar simulação
+    </button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="section-title serif">Banco de imagens</div>
+  <div class="section-rule"></div>
+
+  <div class="upload-zone" id="uploadZone" tabindex="0" role="button">
+    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="upload-title">Clique ou arraste as imagens do atlas</div>
+    <div class="upload-sub">JPG, PNG ou WebP · selecione várias de uma vez</div>
+    <input type="file" id="fileInput" accept="image/*" multiple>
+  </div>
+
+  <div class="counter-row">
+    <div class="section-title serif">Questões</div>
+    <div class="counter"><strong id="totalCount">0</strong> imagens · <strong id="readyCount">0</strong> com alfinete</div>
+  </div>
+  <div class="section-rule"></div>
+
+  <div class="loading-state" id="loadingState">
+    <div class="spin"></div>
+    <div>Carregando questões…</div>
+  </div>
+  <div class="grid" id="grid" style="display:none"></div>
+  <div class="empty-state" id="emptyState" style="display:none">
+    <div class="title">Nenhuma imagem ainda</div>
+    <div class="sub">Adicione imagens do atlas anatômico para montar a simulação.</div>
+  </div>
+</main>
+
+<!-- EDITOR MODAL -->
+<div class="modal-overlay" id="editorModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title serif">Marcar estrutura — Questão <span id="editorNumber">1</span></div>
+      <button class="modal-close" id="editorClose">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="editor-image-area" id="editorArea">
+        <div class="editor-image-wrap" id="editorImageWrap">
+          <img id="editorImage" alt="">
+        </div>
+      </div>
+      <div class="editor-sidebar">
+        <div>
+          <label class="field-label">Posição do alfinete</label>
+          <div class="pin-status" id="pinStatus"><span class="strong">Clique sobre a imagem</span> para fixar o alfinete.</div>
+          <div class="field-help">Clique novamente para reposicionar.</div>
+        </div>
+        <div>
+          <label class="field-label" for="answerInput">Resposta (opcional)</label>
+          <textarea class="field-textarea" id="answerInput" placeholder="Ex.: Nervo mediano"></textarea>
+          <div class="field-help">Aparece ao revelar resposta durante a simulação.</div>
+        </div>
+        <div>
+          <label class="field-label" for="notesInput">Observação (opcional)</label>
+          <input type="text" class="field-input" id="notesInput" placeholder="Ex.: corte transversal · membro superior">
+          <div class="field-help">Visível apenas no painel — não exibido aos alunos.</div>
+        </div>
+        <div class="sidebar-actions">
+          <button class="btn" id="removePinBtn">Remover alfinete</button>
+          <button class="btn btn-primary" id="saveEditorBtn">Salvar e fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRESENTATION -->
+<div class="presentation" id="presentation">
+  <div class="pres-header">
+    <img class="pres-emblem" src="logo ufma.png" alt="UFMA">
+    <div class="pres-title">
+      Anatomia Topográfica · <em style="color:var(--gold-soft);font-style:italic">UFMA</em>
+      <span style="display:block;font-size:12px;font-weight:400;color:rgba(250,247,240,0.65);letter-spacing:0.06em;margin-top:2px;">
+        Monitores: <strong style="color:var(--paper)">Breno Dias</strong> &amp; <strong style="color:var(--paper)">Isabela Nogueira</strong>
+      </span>
+    </div>
+    <div class="pres-counter">Questão <span id="presCurrent">1</span> / <span id="presTotal">40</span></div>
+    <div class="pres-timer" id="presTimer">01:00</div>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="pres-stage" id="presStage">
+    <div class="pres-image-wrap" id="presImageWrap">
+      <img id="presImage" alt="">
+    </div>
+    <div class="pres-answer" id="presAnswer"></div>
+  </div>
+  <div class="pres-controls">
+    <button class="pres-btn" id="prevBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Anterior
+    </button>
+    <button class="pres-btn primary" id="pauseBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" id="pauseIcon"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+      <span id="pauseLabel">Pausar</span>
+    </button>
+    <button class="pres-btn" id="nextBtn">
+      Próxima
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="pres-btn" id="answerBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Mostrar resposta
+    </button>
+    <button class="pres-btn" id="fullscreenBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Tela cheia
+    </button>
+    <button class="pres-btn danger" id="exitBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Sair
+    </button>
+  </div>
+</div>
+
+<!-- END SCREEN -->
+<div class="end-screen" id="endScreen">
+  <img class="end-emblem" src="logo ufma.png" alt="UFMA">
+  <div class="end-title">Fim da <span class="italic">simulação</span></div>
+  <div class="end-sub">Você concluiu todas as questões da prova prática. Boa sorte na avaliação oficial!</div>
+  <div class="end-actions">
+    <button class="end-btn primary" id="restartBtn">Refazer simulação</button>
+    <button class="end-btn" id="reviewBtn">Revisar respostas</button>
+    <button class="end-btn" id="backToSetupBtn">Voltar ao painel</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== STATE =====
+const state = {
+  questions: [],       // normalized local copy
+  timePerQuestion: 60,
+  currentEditorIdx: null,
+  currentPresIdx: 0,
+  timer: null,
+  answerTimer: null,
+  remaining: 0,
+  paused: false,
+  showingAnswer: false,
+};
+let editorOriginalPin = null; // restore if editor closed without saving
+
+// ===== UTILS =====
+function $(id) { return document.getElementById(id); }
+
+function toast(msg, duration = 2400) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function formatTime(s) {
+  return `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(Math.floor(s % 60)).padStart(2,'0')}`;
+}
+
+function escapeHTML(str) {
+  return String(str).replace(/[&<>"']/g, ch =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch])
+  );
+}
+
+function normalizeQuestion(q) {
+  return {
+    id:       q.id,
+    image:    q.image_data,
+    filename: q.filename || '',
+    pinX:     q.pin_x  !== null && q.pin_x  !== undefined ? parseFloat(q.pin_x)  : null,
+    pinY:     q.pin_y  !== null && q.pin_y  !== undefined ? parseFloat(q.pin_y)  : null,
+    answer:   q.answer || '',
+    notes:    q.notes  || '',
+  };
+}
+
+// ===== AUTH =====
+async function checkAuth() {
+  const res = await fetch('/api/me');
+  const { isMonitor } = await res.json();
+  if (!isMonitor) window.location.href = '/login';
+}
+
+$('logoutBtn').addEventListener('click', async () => {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/';
+});
+
+// ===== LOAD FROM SERVER =====
+async function loadFromServer() {
+  $('loadingState').style.display = 'block';
+  $('grid').style.display = 'none';
+  $('emptyState').style.display = 'none';
+  try {
+    const res = await fetch('/api/questions');
+    const data = await res.json();
+    state.questions = data.map(normalizeQuestion);
+  } catch {
+    toast('Erro ao carregar questões do servidor.');
+  }
+  $('loadingState').style.display = 'none';
+  renderGrid();
+}
+
+// ===== FILE UPLOAD =====
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleFiles(files) {
+  const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+  if (!imageFiles.length) { toast('Nenhuma imagem selecionada.'); return; }
+
+  let added = 0;
+  for (const file of imageFiles) {
+    try {
+      const dataUrl = await readFileAsDataURL(file);
+      const res = await fetch('/api/questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_data: dataUrl, filename: file.name }),
+      });
+      if (!res.ok) { toast('Erro ao salvar imagem no servidor.'); continue; }
+      const q = await res.json();
+      state.questions.push(normalizeQuestion(q));
+      added++;
+    } catch {
+      toast('Erro ao processar arquivo.');
+    }
+  }
+  renderGrid();
+  if (added > 0) toast(`${added} ${added === 1 ? 'imagem adicionada' : 'imagens adicionadas'}.`);
+}
+
+$('uploadZone').addEventListener('click', () => $('fileInput').click());
+$('uploadZone').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('fileInput').click(); }
+});
+$('fileInput').addEventListener('change', (e) => { handleFiles(e.target.files); e.target.value = ''; });
+
+['dragenter','dragover'].forEach(evt =>
+  $('uploadZone').addEventListener(evt, (e) => { e.preventDefault(); $('uploadZone').classList.add('dragover'); })
+);
+['dragleave','drop'].forEach(evt =>
+  $('uploadZone').addEventListener(evt, (e) => { e.preventDefault(); $('uploadZone').classList.remove('dragover'); })
+);
+$('uploadZone').addEventListener('drop', (e) => {
+  if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+});
+
+// ===== GRID RENDER =====
+function renderGrid() {
+  const grid = $('grid');
+  const empty = $('emptyState');
+
+  $('totalCount').textContent = state.questions.length;
+  $('readyCount').textContent = state.questions.filter(q => q.pinX !== null).length;
+
+  if (state.questions.length === 0) {
+    grid.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+  grid.style.display = 'grid';
+  grid.innerHTML = state.questions.map((q, idx) => {
+    const hasPin = q.pinX !== null;
+    const pinHTML = hasPin
+      ? `<div class="card-pin" style="left:${q.pinX}%;top:${q.pinY}%"><div class="pin-marker"></div></div>`
+      : '';
+    return `
+      <div class="card" data-idx="${idx}">
+        <div class="card-image-wrap" data-action="edit">
+          <span class="card-number">${idx + 1}</span>
+          <span class="card-status ${hasPin ? 'status-ready' : 'status-pending'}">${hasPin ? 'Marcada' : 'Sem alfinete'}</span>
+          <img src="${q.image}" alt="Questão ${idx+1}" loading="lazy">
+          ${pinHTML}
+        </div>
+        <div class="card-body">
+          <div class="card-label ${q.answer ? '' : 'empty'}">${escapeHTML(q.answer || 'Sem resposta cadastrada')}</div>
+          <div class="card-actions">
+            <button class="card-btn" data-action="up" ${idx===0?'disabled':''}>↑ Acima</button>
+            <button class="card-btn" data-action="down" ${idx===state.questions.length-1?'disabled':''}>↓ Abaixo</button>
+            <button class="card-btn danger" data-action="delete">Remover</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.card').forEach(card => {
+    const idx = parseInt(card.dataset.idx, 10);
+    card.querySelectorAll('[data-action]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const a = el.dataset.action;
+        if (a === 'edit') openEditor(idx);
+        else if (a === 'up') moveQuestion(idx, -1);
+        else if (a === 'down') moveQuestion(idx, 1);
+        else if (a === 'delete') deleteQuestion(idx);
+      });
+    });
+  });
+}
+
+async function moveQuestion(idx, delta) {
+  const newIdx = idx + delta;
+  if (newIdx < 0 || newIdx >= state.questions.length) return;
+  [state.questions[idx], state.questions[newIdx]] = [state.questions[newIdx], state.questions[idx]];
+  renderGrid();
+  const order = state.questions.map((q, i) => ({ id: q.id, position: i }));
+  fetch('/api/questions/reorder', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ order }),
+  });
+}
+
+async function deleteQuestion(idx) {
+  if (!confirm(`Remover a questão ${idx + 1}?`)) return;
+  const q = state.questions[idx];
+  const res = await fetch(`/api/questions/${q.id}`, { method: 'DELETE' });
+  if (res.ok) {
+    state.questions.splice(idx, 1);
+    renderGrid();
+    toast('Questão removida.');
+  }
+}
+
+// ===== EDITOR =====
+function openEditor(idx) {
+  state.currentEditorIdx = idx;
+  const q = state.questions[idx];
+  editorOriginalPin = { pinX: q.pinX, pinY: q.pinY };
+
+  $('editorNumber').textContent = idx + 1;
+  $('editorImage').src = q.image;
+  $('answerInput').value = q.answer || '';
+  $('notesInput').value = q.notes || '';
+  updateEditorPin();
+  $('editorModal').classList.add('active');
+}
+
+function closeEditor(save = false) {
+  if (!save && editorOriginalPin !== null && state.currentEditorIdx !== null) {
+    const q = state.questions[state.currentEditorIdx];
+    if (q) { q.pinX = editorOriginalPin.pinX; q.pinY = editorOriginalPin.pinY; }
+  }
+  editorOriginalPin = null;
+  $('editorModal').classList.remove('active');
+  state.currentEditorIdx = null;
+}
+
+function updateEditorPin() {
+  const q = state.questions[state.currentEditorIdx];
+  const wrap = $('editorImageWrap');
+  const existing = wrap.querySelector('.editor-pin');
+  if (existing) existing.remove();
+
+  const status = $('pinStatus');
+  if (q.pinX !== null) {
+    const pin = document.createElement('div');
+    pin.className = 'editor-pin';
+    pin.style.left = q.pinX + '%';
+    pin.style.top  = q.pinY + '%';
+    pin.innerHTML  = '<div class="pin-marker"></div>';
+    wrap.appendChild(pin);
+    status.classList.add('set');
+    status.innerHTML = `<span class="strong">Alfinete fixado</span> em ${q.pinX.toFixed(1)}% × ${q.pinY.toFixed(1)}%`;
+  } else {
+    status.classList.remove('set');
+    status.innerHTML = `<span class="strong">Clique sobre a imagem</span> para fixar o alfinete na estrutura.`;
+  }
+}
+
+$('editorImage').addEventListener('click', (e) => {
+  const img  = e.target;
+  const rect = img.getBoundingClientRect();
+  const q = state.questions[state.currentEditorIdx];
+  q.pinX = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width)  * 100));
+  q.pinY = Math.max(0, Math.min(100, ((e.clientY - rect.top)  / rect.height) * 100));
+  updateEditorPin();
+});
+
+$('removePinBtn').addEventListener('click', () => {
+  const q = state.questions[state.currentEditorIdx];
+  q.pinX = null; q.pinY = null;
+  updateEditorPin();
+});
+
+$('saveEditorBtn').addEventListener('click', async () => {
+  const q      = state.questions[state.currentEditorIdx];
+  const answer = $('answerInput').value.trim();
+  const notes  = $('notesInput').value.trim();
+
+  const res = await fetch(`/api/questions/${q.id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pin_x: q.pinX, pin_y: q.pinY, answer, notes }),
+  });
+
+  if (res.ok) {
+    q.answer = answer;
+    q.notes  = notes;
+    closeEditor(true);
+    renderGrid();
+    toast('Questão salva.');
+  } else {
+    toast('Erro ao salvar. Tente novamente.');
+  }
+});
+
+$('editorClose').addEventListener('click', () => closeEditor(false));
+$('editorModal').addEventListener('click', (e) => { if (e.target === $('editorModal')) closeEditor(false); });
+
+// ===== PRESENTATION =====
+function startPresentation() {
+  if (state.questions.length === 0) { toast('Adicione ao menos uma imagem antes de iniciar.'); return; }
+  const missing = state.questions.filter(q => q.pinX === null).length;
+  if (missing > 0 && !confirm(`${missing} ${missing===1?'questão está':'questões estão'} sem alfinete. Iniciar mesmo assim?`)) return;
+
+  state.timePerQuestion = Math.max(5, parseInt($('timeInput').value, 10) || 60);
+  state.currentPresIdx  = 0;
+  $('presTotal').textContent = state.questions.length;
+  $('presentation').classList.add('active');
+  $('endScreen').classList.remove('active');
+  loadPresQuestion();
+}
+
+function loadPresQuestion() {
+  const q = state.questions[state.currentPresIdx];
+  if (!q) return;
+  $('presCurrent').textContent = state.currentPresIdx + 1;
+  $('presImage').src = q.image;
+  $('presAnswer').textContent = q.answer || '(sem resposta cadastrada)';
+  $('presAnswer').classList.remove('show');
+  state.showingAnswer = false;
+  $('presImage').onload = () => placePresPin(q);
+  if ($('presImage').complete) placePresPin(q);
+  state.remaining = state.timePerQuestion;
+  state.paused    = false;
+  updatePauseButton();
+  updateTimerDisplay();
+  startTimer();
+}
+
+function placePresPin(q) {
+  const wrap = $('presImageWrap');
+  const old  = wrap.querySelector('.pres-pin');
+  if (old) old.remove();
+  if (q.pinX === null) return;
+  const pin = document.createElement('div');
+  pin.className  = 'pres-pin';
+  pin.style.left = q.pinX + '%';
+  pin.style.top  = q.pinY + '%';
+  pin.innerHTML  = '<div class="pin-marker large"></div>';
+  wrap.appendChild(pin);
+}
+
+function startTimer() {
+  stopTimer();
+  state.timer = setInterval(() => {
+    if (state.paused) return;
+    state.remaining--;
+    updateTimerDisplay();
+    if (state.remaining <= 0) nextQuestion();
+  }, 1000);
+}
+
+function stopTimer() {
+  if (state.timer) { clearInterval(state.timer); state.timer = null; }
+}
+
+function updateTimerDisplay() {
+  const timer = $('presTimer');
+  const fill  = $('progressFill');
+  timer.textContent = formatTime(state.remaining);
+  fill.style.width  = (state.remaining / state.timePerQuestion * 100) + '%';
+  timer.classList.remove('warning','critical');
+  fill.classList.remove('warning','critical');
+  if (state.remaining <= 10)      { timer.classList.add('critical'); fill.classList.add('critical'); }
+  else if (state.remaining <= 20) { timer.classList.add('warning');  fill.classList.add('warning'); }
+}
+
+function nextQuestion() {
+  stopTimer();
+  clearTimeout(state.answerTimer);
+  if (!state.showingAnswer) {
+    state.showingAnswer = true;
+    $('presAnswer').classList.add('show');
+    state.answerTimer = setTimeout(doAdvance, 3000);
+  } else {
+    doAdvance();
+  }
+}
+
+function doAdvance() {
+  clearTimeout(state.answerTimer);
+  if (state.currentPresIdx >= state.questions.length - 1) { endPresentation(); return; }
+  state.currentPresIdx++;
+  loadPresQuestion();
+}
+
+function prevQuestion() {
+  clearTimeout(state.answerTimer);
+  stopTimer();
+  if (state.currentPresIdx <= 0) return;
+  state.currentPresIdx--;
+  loadPresQuestion();
+}
+
+function togglePause() {
+  state.paused = !state.paused;
+  updatePauseButton();
+}
+
+function updatePauseButton() {
+  const icon  = $('pauseIcon');
+  const label = $('pauseLabel');
+  if (state.paused) {
+    icon.innerHTML   = '<polygon points="6 4 20 12 6 20 6 4"/>';
+    label.textContent = 'Retomar';
+  } else {
+    icon.innerHTML   = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+    label.textContent = 'Pausar';
+  }
+}
+
+function toggleAnswer() {
+  state.showingAnswer = !state.showingAnswer;
+  $('presAnswer').classList.toggle('show', state.showingAnswer);
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+  else document.exitFullscreen().catch(() => {});
+}
+
+function exitPresentation() {
+  stopTimer(); clearTimeout(state.answerTimer);
+  $('presentation').classList.remove('active');
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+}
+
+function endPresentation() {
+  stopTimer(); clearTimeout(state.answerTimer);
+  $('presentation').classList.remove('active');
+  $('endScreen').classList.add('active');
+}
+
+$('startBtn').addEventListener('click', startPresentation);
+$('nextBtn').addEventListener('click', nextQuestion);
+$('prevBtn').addEventListener('click', prevQuestion);
+$('pauseBtn').addEventListener('click', togglePause);
+$('answerBtn').addEventListener('click', toggleAnswer);
+$('fullscreenBtn').addEventListener('click', toggleFullscreen);
+$('exitBtn').addEventListener('click', () => { if (confirm('Sair da simulação?')) exitPresentation(); });
+
+$('restartBtn').addEventListener('click', () => {
+  $('endScreen').classList.remove('active');
+  startPresentation();
+});
+$('reviewBtn').addEventListener('click', () => {
+  $('endScreen').classList.remove('active');
+  state.currentPresIdx = 0;
+  $('presentation').classList.add('active');
+  loadPresQuestion();
+  state.paused = true;
+  updatePauseButton();
+  toggleAnswer();
+});
+$('backToSetupBtn').addEventListener('click', () => $('endScreen').classList.remove('active'));
+
+document.addEventListener('keydown', (e) => {
+  if (!$('presentation').classList.contains('active')) return;
+  if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); nextQuestion(); }
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prevQuestion(); }
+  else if (e.key === ' ') { e.preventDefault(); togglePause(); }
+  else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); toggleAnswer(); }
+  else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFullscreen(); }
+  else if (e.key === 'Escape' && !document.fullscreenElement) {
+    if (confirm('Sair da simulação?')) exitPresentation();
+  }
+});
+
+// ===== EXPORT / IMPORT / CLEAR =====
+$('exportBtn').addEventListener('click', () => {
+  if (!state.questions.length) { toast('Nada para exportar.'); return; }
+  const payload = {
+    version: 2,
+    createdAt: new Date().toISOString(),
+    timePerQuestion: parseInt($('timeInput').value, 10) || 60,
+    questions: state.questions.map(q => ({
+      image_data: q.image, filename: q.filename,
+      pin_x: q.pinX, pin_y: q.pinY,
+      answer: q.answer, notes: q.notes,
+    })),
+  };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+  a.download = `anatomia-ufma-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  toast('Exportado.');
+});
+
+$('importBtn').addEventListener('click', () => $('importInput').click());
+$('importInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!Array.isArray(data.questions)) throw new Error();
+      if (state.questions.length > 0 && !confirm('Substituir todas as questões atuais pelo arquivo importado?')) return;
+
+      // clear server
+      await fetch('/api/questions', { method: 'DELETE' });
+      state.questions = [];
+
+      for (const q of data.questions) {
+        const res = await fetch('/api/questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_data: q.image_data || q.image,
+            filename: q.filename || '',
+            pin_x: q.pin_x ?? q.pinX ?? null,
+            pin_y: q.pin_y ?? q.pinY ?? null,
+            answer: q.answer || '',
+            notes: q.notes || '',
+          }),
+        });
+        if (res.ok) state.questions.push(normalizeQuestion(await res.json()));
+      }
+      if (data.timePerQuestion) $('timeInput').value = data.timePerQuestion;
+      renderGrid();
+      toast(`Importado: ${state.questions.length} questões.`);
+    } catch { toast('Arquivo inválido.'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+$('clearBtn').addEventListener('click', async () => {
+  if (!state.questions.length) return;
+  if (!confirm('Remover TODAS as questões do servidor? Esta ação não pode ser desfeita.')) return;
+  const res = await fetch('/api/questions', { method: 'DELETE' });
+  if (res.ok) {
+    state.questions = [];
+    renderGrid();
+    toast('Painel limpo.');
+  }
+});
+
+// ===== INIT =====
+checkAuth().then(loadFromServer);
+</script>
+</body>
+</html>
