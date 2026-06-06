@@ -61,7 +61,7 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
 
 /* PIN */
 .pin-marker { width:26px; height:50px; position:relative; filter:drop-shadow(0 2px 5px rgba(0,0,0,0.5)); }
-.pin-marker::before { content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:3.5px; height:32px; background:linear-gradient(to bottom,#b0b0b0 0%,#707070 45%,#2a2a2a 100%); border-radius:0 0 1.5px 1.5px; clip-path:polygon(22% 0%,78% 0%,100% 100%,0% 100%); }
+.pin-marker::before { content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:3.5px; height:32px; background:linear-gradient(to bottom,#b0b0b0 0%,#707070 45%,#2a2a2a 100%); border-radius:0 0 1.5px 1.5px; clip-path:polygon(0% 0%,100% 0%,58% 100%,42% 100%); }
 .pin-marker::after { content:''; position:absolute; top:0; left:50%; transform:translateX(-50%); width:22px; height:22px; background:radial-gradient(circle at 38% 32%,#ff8080 0%,#d62020 55%,#8a0000 100%); border-radius:50%; border:1.5px solid rgba(255,255,255,0.4); box-shadow:inset 0 3px 5px rgba(255,255,255,0.35),inset 0 -3px 5px rgba(0,0,0,0.35),0 2px 5px rgba(0,0,0,0.35); }
 .pin-marker.large { width:40px; height:74px; filter:drop-shadow(0 4px 10px rgba(0,0,0,0.6)); }
 .pin-marker.large::before { width:5px; height:48px; }
@@ -290,6 +290,26 @@ const state = {
 function $(id) { return document.getElementById(id); }
 function formatTime(s) { return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`; }
 
+function getImageContentRect(img) {
+  const nW = img.naturalWidth;
+  const nH = img.naturalHeight;
+  const { width: eW, height: eH } = img.getBoundingClientRect();
+  if (!nW || !nH || !eW || !eH) return { x: 0, y: 0, w: eW || 1, h: eH || 1 };
+  const scale = Math.min(eW / nW, eH / nH);
+  const cW = nW * scale;
+  const cH = nH * scale;
+  return { x: (eW - cW) / 2, y: (eH - cH) / 2, w: cW, h: cH };
+}
+
+function imgPctToElemPct(img, pinX, pinY) {
+  const c = getImageContentRect(img);
+  const { width: eW, height: eH } = img.getBoundingClientRect();
+  return {
+    left: ((c.x + (pinX / 100) * c.w) / eW) * 100,
+    top:  ((c.y + (pinY / 100) * c.h) / eH) * 100,
+  };
+}
+
 function normalizeQuestion(q) {
   return {
     id: q.id, image: q.image_data, filename: q.filename || '',
@@ -348,13 +368,15 @@ function loadPresQuestion() {
 
 function placePin(q) {
   const wrap = $('presImageWrap');
+  const img  = $('presImage');
   const old  = wrap.querySelector('.pres-pin');
   if (old) old.remove();
   if (q.pinX === null) return;
+  const pct = imgPctToElemPct(img, q.pinX, q.pinY);
   const pin = document.createElement('div');
   pin.className  = 'pres-pin';
-  pin.style.left = q.pinX + '%';
-  pin.style.top  = q.pinY + '%';
+  pin.style.left = pct.left + '%';
+  pin.style.top  = pct.top  + '%';
   pin.innerHTML  = '<div class="pin-marker large"></div>';
   wrap.appendChild(pin);
 }
