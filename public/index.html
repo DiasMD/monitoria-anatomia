@@ -166,9 +166,19 @@ body {
 .credit {
   margin-top: 36px;
   font-size: 12px;
-  color: rgba(212,180,124,0.45);
-  letter-spacing: 0.08em;
+  color: rgba(212,180,124,0.75);
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
+.credit a {
+  color: rgba(212,180,124,0.75);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.credit a:hover { color: var(--gold-soft); }
+.credit .sep { opacity: 0.4; }
 </style>
 </head>
 <body>
@@ -202,7 +212,11 @@ body {
       <div class="card-sub">Gerenciar questões e configurar a simulação</div>
     </a>
   </div>
-  <div class="credit">Criado por Breno Dias Lima Ribeiro</div>
+  <div class="credit">
+    Criado por Breno Dias Lima Ribeiro
+    <span class="sep">·</span>
+    <a href="https://instagram.com/brenodias_br" target="_blank" rel="noopener">@brenodias_br</a>
+  </div>
 </div>
 </body>
 </html>
