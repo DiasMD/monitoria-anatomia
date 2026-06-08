@@ -38,6 +38,10 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
 .monitors-names { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; color: var(--paper); }
 .monitors-sep { color: var(--gold-soft); margin: 0 5px; font-weight: 300; }
 .header-sub { margin-top: 4px; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(212,180,124,0.65); }
+.header-credit { margin-top: 5px; font-size: 11px; color: rgba(212,180,124,0.45); letter-spacing: 0.04em; }
+.header-credit strong { font-weight: 500; color: rgba(212,180,124,0.6); }
+.header-credit a { color: rgba(212,180,124,0.55); text-decoration: none; transition: color 0.15s; }
+.header-credit a:hover { color: var(--gold-soft); }
 .header-actions { display: flex; gap: 10px; align-items: center; margin-left: auto; }
 .btn-logout { font-family: inherit; font-size: 12px; font-weight: 500; padding: 9px 16px; border: 1px solid rgba(212,180,124,0.4); background: transparent; color: var(--gold-soft); cursor: pointer; border-radius: 2px; transition: all 0.15s ease; letter-spacing: 0.05em; text-transform: uppercase; }
 .btn-logout:hover { background: var(--gold); color: var(--ink); border-color: var(--gold); }
@@ -329,6 +333,7 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
         <span class="monitors-names">Breno Dias<span class="monitors-sep">&amp;</span>Isabela Nogueira</span>
       </div>
       <div class="header-sub">Painel do Monitor · Simulação Prova Prática</div>
+      <div class="header-credit">Criado por <strong>Breno Dias Lima Ribeiro</strong> · <a href="https://instagram.com/brenodias_br" target="_blank" rel="noopener">@brenodias_br</a></div>
     </div>
     <div class="header-actions">
       <button class="btn-logout" id="logoutBtn">Sair</button>
