@@ -147,6 +147,17 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
 .pin-status .strong { font-weight: 600; }
 .sidebar-actions { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--rule); display: flex; flex-direction: column; gap: 10px; }
 
+/* SIBLINGS BAR */
+.siblings-bar { background: rgba(10,31,61,0.04); border-bottom: 1px solid var(--rule); padding: 10px 24px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.siblings-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted); font-weight: 600; white-space: nowrap; }
+.siblings-nav { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.sibling-btn { min-width: 28px; height: 26px; padding: 0 8px; border-radius: 13px; border: 1.5px solid var(--rule-strong); background: var(--paper); font-size: 11px; font-weight: 600; cursor: pointer; color: var(--muted); transition: all 0.15s; white-space: nowrap; font-family: inherit; }
+.sibling-btn:hover { border-color: var(--gold); color: var(--ink); background: rgba(184,146,74,0.08); }
+.sibling-btn.active { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+.sibling-btn.add { border-style: dashed; border-color: rgba(184,146,74,0.5); color: var(--gold); }
+.sibling-btn.add:hover { border-color: var(--gold); background: rgba(184,146,74,0.1); color: var(--gold); }
+.ghost-pin { opacity: 1; }
+
 /* PIN — seta SVG (sem estilos CSS necessários) */
 
 /* PRESENTATION */
@@ -430,6 +441,10 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>
       </button>
     </div>
+    <div class="siblings-bar" id="siblingsBar">
+      <span class="siblings-label">Esta imagem</span>
+      <div class="siblings-nav" id="siblingsNav"></div>
+    </div>
     <div class="modal-body">
       <div class="editor-image-area" id="editorArea">
         <div class="editor-image-wrap" id="editorImageWrap">
@@ -627,6 +642,17 @@ function createPinDotSVG(nW, nH, pinX, pinY) {
     style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;">
     <circle cx="${f(px)}" cy="${f(py)}" r="${f(r * 1.8)}" fill="white" opacity="0.85"/>
     <circle cx="${f(px)}" cy="${f(py)}" r="${f(r)}" fill="black"/>
+  </svg>`;
+}
+
+// Ghost pin (ponto semi-transparente) para questões irmãs na mesma imagem
+function createGhostPinSVG(nW, nH, pinX, pinY) {
+  const cx = (pinX / 100) * nW;
+  const cy = (pinY / 100) * nH;
+  const r  = Math.min(nW, nH) * 0.022;
+  return `<svg class="pin-svg ghost-pin" viewBox="0 0 ${nW} ${nH}" preserveAspectRatio="xMidYMid meet"
+    style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;">
+    <circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${(r+1).toFixed(2)}" fill="rgba(184,146,74,0.18)" stroke="rgba(184,146,74,0.75)" stroke-width="1.5" stroke-dasharray="4 2"/>
   </svg>`;
 }
 
@@ -964,6 +990,45 @@ async function deleteQuestion(idx) {
 }
 
 // ===== EDITOR =====
+function renderSiblingsBar(currentIdx) {
+  const q = state.questions[currentIdx];
+  const siblings = state.questions
+    .map((qq, i) => ({ qq, i }))
+    .filter(({ qq }) => qq.image === q.image);
+
+  const nav = $('siblingsNav');
+
+  nav.innerHTML = siblings.map(({ qq, i }, n) => {
+    const label = qq.answer ? `${n+1} · ${escapeHTML(qq.answer.slice(0,18))}${qq.answer.length > 18 ? '…' : ''}` : `Q${n+1}`;
+    const isActive = i === currentIdx;
+    const noPin = qq.pinX === null ? ' no-pin' : '';
+    return `<button class="sibling-btn${isActive ? ' active' : ''}${noPin}" data-sib="${i}" title="Questão ${i+1}${qq.answer ? ': '+qq.answer : ''}">${label}</button>`;
+  }).join('') + `<button class="sibling-btn add" id="addSiblingBtn" title="Adicionar questão nesta imagem">＋ nova questão</button>`;
+
+  nav.querySelectorAll('.sibling-btn[data-sib]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetIdx = parseInt(btn.dataset.sib);
+      if (targetIdx !== currentIdx) { closeEditor(false); openEditor(targetIdx); }
+    });
+  });
+  $('addSiblingBtn').addEventListener('click', addSiblingQuestion);
+}
+
+async function addSiblingQuestion() {
+  const q = state.questions[state.currentEditorIdx];
+  const res = await fetch('/api/questions/from-image', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ image_url: q.image, filename: q.filename, module_id: q.moduleId }),
+  });
+  if (!res.ok) { toast('Erro ao criar questão.'); return; }
+  const newQ = normalizeQuestion(await res.json());
+  state.questions.push(newQ);
+  renderGrid();
+  closeEditor(false);
+  openEditor(state.questions.length - 1);
+}
+
 function openEditor(idx) {
   state.currentEditorIdx = idx;
   const q = state.questions[idx];
@@ -975,6 +1040,7 @@ function openEditor(idx) {
   $('hintInput').value   = q.hint   || '';
   $('notesInput').value  = q.notes  || '';
   $('editorModuleSelect').value = q.moduleId ?? '';
+  renderSiblingsBar(idx);
   updateEditorPin();
   $('editorModal').classList.add('active');
 }
@@ -995,6 +1061,16 @@ function updateEditorPin() {
   const img  = $('editorImage');
 
   wrap.querySelectorAll('.pin-svg').forEach(e => e.remove());
+
+  // Ghost pins para questões irmãs (desenhados primeiro, ficam atrás do pino atual)
+  if (img.naturalWidth) {
+    state.questions.forEach((sib, i) => {
+      if (i !== state.currentEditorIdx && sib.image === q.image && sib.pinX !== null) {
+        wrap.insertAdjacentHTML('beforeend',
+          createGhostPinSVG(img.naturalWidth, img.naturalHeight, sib.pinX, sib.pinY));
+      }
+    });
+  }
 
   const status = $('pinStatus');
   if (q.pinX !== null) {

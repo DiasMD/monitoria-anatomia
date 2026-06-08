@@ -278,6 +278,19 @@ app.post('/api/questions/import-json', requireMonitor, (req, res) => {
   res.json(rowToQuestion(db.prepare('SELECT * FROM questions WHERE id=?').get(result.lastInsertRowid)));
 });
 
+// Cria uma nova questão reutilizando uma imagem já existente (sem upload)
+app.post('/api/questions/from-image', requireMonitor, (req, res) => {
+  const { image_url, filename, module_id } = req.body;
+  if (!image_url) return res.status(400).json({ error: 'image_url obrigatório' });
+  const { m } = db.prepare('SELECT COALESCE(MAX(position),-1) as m FROM questions').get();
+  const result = db.prepare(
+    `INSERT INTO questions (position, image_url, image_data, filename, pin_x, pin_y, answer, notes, hint, module_id)
+     VALUES (?,?,?,?,?,?,?,?,?,?)`
+  ).run(m + 1, image_url, '', filename || '', null, null, '', '', '',
+        module_id ? parseInt(module_id) : null);
+  res.json(rowToQuestion(db.prepare('SELECT * FROM questions WHERE id=?').get(result.lastInsertRowid)));
+});
+
 app.put('/api/questions/:id', requireMonitor, (req, res) => {
   const { pin_x, pin_y, answer, notes, hint, module_id } = req.body;
   db.prepare(
