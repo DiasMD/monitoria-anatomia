@@ -81,7 +81,6 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
 .card:hover { border-color: var(--ink); box-shadow: var(--shadow-md); transform: translateY(-1px); }
 .card-image-wrap { aspect-ratio: 4/3; background: var(--paper-soft); position: relative; overflow: hidden; cursor: pointer; }
 .card-image-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.card-pin { position: absolute; pointer-events: none; transform: translate(-50%,-100%); }
 .card-number { position: absolute; top: 8px; left: 8px; background: var(--ink); color: var(--paper); font-family: 'Cormorant Garamond', serif; font-size: 16px; font-weight: 600; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 2; }
 .card-status { position: absolute; top: 8px; right: 8px; font-size: 10px; font-weight: 600; padding: 4px 8px; border-radius: 2px; letter-spacing: 0.08em; text-transform: uppercase; z-index: 2; }
 .status-pending { background: rgba(214,38,58,0.92); color: white; }
@@ -133,7 +132,6 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
 .editor-image-area { background: repeating-conic-gradient(var(--paper-soft) 0% 25%, rgba(217,209,189,0.4) 0% 50%) 50%/24px 24px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 400px; cursor: crosshair; }
 .editor-image-wrap { position: relative; max-width: 100%; max-height: 100%; display: inline-block; }
 .editor-image-wrap img { display: block; max-width: 100%; max-height: 70vh; object-fit: contain; }
-.editor-pin { position: absolute; pointer-events: none; transform: translate(-50%, -100%); }
 .editor-sidebar { background: var(--paper); padding: 24px; border-left: 1px solid var(--rule); display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
 .field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted); font-weight: 600; margin-bottom: 8px; display: block; }
 .field-help { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 6px; }
@@ -145,57 +143,7 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
 .pin-status .strong { font-weight: 600; }
 .sidebar-actions { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--rule); display: flex; flex-direction: column; gap: 10px; }
 
-/* PIN */
-.pin-marker {
-  width: 18px; height: 44px;
-  position: relative;
-  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.6));
-}
-/* Agulha — larga no topo, afina na ponta */
-.pin-marker::before {
-  content: ''; position: absolute; bottom: 0; left: 50%;
-  transform: translateX(-50%);
-  width: 2px; height: 32px;
-  background: linear-gradient(to bottom, #ccc 0%, #888 40%, #222 100%);
-  clip-path: polygon(0% 0%, 100% 0%, 58% 100%, 42% 100%);
-}
-/* Cabeça — menor, com contorno branco para destacar em qualquer fundo */
-.pin-marker::after {
-  content: ''; position: absolute; top: 0; left: 50%;
-  transform: translateX(-50%);
-  width: 13px; height: 13px;
-  background: radial-gradient(circle at 36% 30%, #ff9090 0%, #e02020 50%, #960000 100%);
-  border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.7);
-  box-shadow: 0 0 0 1.5px rgba(180,20,20,0.45), 0 2px 5px rgba(0,0,0,0.55);
-}
-
-/* Versão grande — modo apresentação */
-.pin-marker.large {
-  width: 26px; height: 60px;
-  filter: drop-shadow(0 3px 8px rgba(0,0,0,0.7));
-}
-.pin-marker.large::before { width: 2.5px; height: 44px; }
-.pin-marker.large::after {
-  width: 17px; height: 17px;
-  border-width: 2.5px;
-  animation: pulse-ring 2s ease-in-out infinite;
-}
-/* Anel pulsante expandindo para fora — sem aumentar a bola */
-@keyframes pulse-ring {
-  0%, 100% {
-    box-shadow:
-      0 0 0 2px rgba(214,38,58,0.55),
-      0 0 0 5px rgba(214,38,58,0.2),
-      0 3px 7px rgba(0,0,0,0.55);
-  }
-  50% {
-    box-shadow:
-      0 0 0 4px rgba(214,38,58,0.65),
-      0 0 0 11px rgba(214,38,58,0.1),
-      0 3px 7px rgba(0,0,0,0.55);
-  }
-}
+/* PIN — seta SVG (sem estilos CSS necessários) */
 
 /* PRESENTATION */
 .presentation { display: none; position: fixed; inset: 0; background: #0a0a0a; z-index: 200; flex-direction: column; }
@@ -210,7 +158,6 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
 .pres-stage { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; padding: 24px; overflow: hidden; }
 .pres-image-wrap { position: relative; max-width: 100%; max-height: 100%; display: inline-block; }
 .pres-image-wrap img { display: block; max-width: 100%; max-height: calc(100vh - 200px); object-fit: contain; }
-.pres-pin { position: absolute; pointer-events: none; transform: translate(-50%,-100%); z-index: 10; }
 .pres-answer { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(10,31,61,0.94); color: var(--paper); padding: 18px 36px; border-radius: 4px; border: 1px solid var(--gold); font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; max-width: 80%; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: none; }
 .pres-answer.show { display: block; animation: fadeUp 0.3s ease; }
 @keyframes fadeUp { from { opacity:0; transform: translateX(-50%) translateY(8px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
@@ -620,6 +567,58 @@ let editorOriginalPin = null;
 // ===== UTILS =====
 function $(id) { return document.getElementById(id); }
 
+// Seta SVG pontilhada preta apontando para o pino.
+// viewBox = dimensões naturais da imagem + preserveAspectRatio xMidYMid meet
+// espelha object-fit:contain → ponto correto em qualquer resolução.
+function createPinArrowSVG(nW, nH, pinX, pinY) {
+  const px = (pinX / 100) * nW;
+  const py = (pinY / 100) * nH;
+  const minD = Math.min(nW, nH);
+  const L  = minD * 0.13;
+  const sw = minD * 0.007;
+  const dsh = minD * 0.024, gap = minD * 0.012;
+  const al = minD * 0.034, aw = al * 0.52;
+
+  let tx = px + (pinX < 50 ? L : -L);
+  let ty = py + (pinY < 50 ? L : -L);
+  tx = Math.max(L * 0.15, Math.min(nW - L * 0.15, tx));
+  ty = Math.max(L * 0.15, Math.min(nH - L * 0.15, ty));
+
+  const angle = Math.atan2(py - ty, px - tx);
+  const cos = Math.cos(angle), sin = Math.sin(angle);
+  const ex = px - al * cos, ey = py - al * sin;
+  const a1x = ex + aw * sin, a1y = ey - aw * cos;
+  const a2x = ex - aw * sin, a2y = ey + aw * cos;
+  const f = v => v.toFixed(2);
+
+  return `<svg class="pin-svg" viewBox="0 0 ${nW} ${nH}" preserveAspectRatio="xMidYMid meet"
+    style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden;">
+    <line x1="${f(tx)}" y1="${f(ty)}" x2="${f(ex)}" y2="${f(ey)}"
+      stroke="white" stroke-width="${f(sw*3)}" stroke-linecap="round"
+      stroke-dasharray="${f(dsh)} ${f(gap)}"/>
+    <polygon points="${f(px)},${f(py)} ${f(a1x)},${f(a1y)} ${f(a2x)},${f(a2y)}"
+      fill="white" stroke="white" stroke-width="${f(sw)}" stroke-linejoin="round"/>
+    <line x1="${f(tx)}" y1="${f(ty)}" x2="${f(ex)}" y2="${f(ey)}"
+      stroke="black" stroke-width="${f(sw)}" stroke-linecap="round"
+      stroke-dasharray="${f(dsh)} ${f(gap)}"/>
+    <polygon points="${f(px)},${f(py)} ${f(a1x)},${f(a1y)} ${f(a2x)},${f(a2y)}"
+      fill="black"/>
+  </svg>`;
+}
+
+// Versão simplificada (ponto) para miniaturas do grid
+function createPinDotSVG(nW, nH, pinX, pinY) {
+  const px = (pinX / 100) * nW;
+  const py = (pinY / 100) * nH;
+  const r  = Math.min(nW, nH) * 0.026;
+  const f  = v => v.toFixed(2);
+  return `<svg class="pin-svg" viewBox="0 0 ${nW} ${nH}" preserveAspectRatio="xMidYMid meet"
+    style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;">
+    <circle cx="${f(px)}" cy="${f(py)}" r="${f(r * 1.8)}" fill="white" opacity="0.85"/>
+    <circle cx="${f(px)}" cy="${f(py)}" r="${f(r)}" fill="black"/>
+  </svg>`;
+}
+
 function toast(msg, duration = 2400) {
   const t = $('toast');
   t.textContent = msg;
@@ -876,19 +875,16 @@ function renderGrid() {
   grid.style.display = 'grid';
 
   grid.innerHTML = visible.map((q, visIdx) => {
-    const idx    = state.questions.indexOf(q); // índice real
+    const idx    = state.questions.indexOf(q);
     const hasPin = q.pinX !== null;
     const mod    = state.modules.find(m => m.id === q.moduleId);
-    const pinHTML = hasPin
-      ? `<div class="card-pin" style="left:${q.pinX}%;top:${q.pinY}%"><div class="pin-marker"></div></div>`
-      : '';
+    const pinData = hasPin ? `data-pin-x="${q.pinX}" data-pin-y="${q.pinY}"` : '';
     return `
       <div class="card" data-idx="${idx}">
-        <div class="card-image-wrap" data-action="edit">
+        <div class="card-image-wrap" data-action="edit" ${pinData}>
           <span class="card-number">${visIdx + 1}</span>
           <span class="card-status ${hasPin ? 'status-ready' : 'status-pending'}">${hasPin ? 'Marcada' : 'Sem alfinete'}</span>
           <img src="${q.image}" alt="Questão ${visIdx+1}" loading="lazy">
-          ${pinHTML}
         </div>
         <div class="card-body">
           ${mod ? `<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--gold);font-weight:600;margin-bottom:5px;">${escapeHTML(mod.name)}</div>` : ''}
@@ -901,6 +897,20 @@ function renderGrid() {
         </div>
       </div>`;
   }).join('');
+
+  // Adiciona ponto SVG nas miniaturas após carregamento das imagens
+  grid.querySelectorAll('.card-image-wrap[data-pin-x]').forEach(wrap => {
+    const img  = wrap.querySelector('img');
+    const pinX = parseFloat(wrap.dataset.pinX);
+    const pinY = parseFloat(wrap.dataset.pinY);
+    const addDot = () => {
+      if (!img.naturalWidth) return;
+      wrap.querySelectorAll('.pin-svg').forEach(e => e.remove());
+      wrap.insertAdjacentHTML('beforeend', createPinDotSVG(img.naturalWidth, img.naturalHeight, pinX, pinY));
+    };
+    if (img.complete && img.naturalWidth) addDot();
+    else img.addEventListener('load', addDot, { once: true });
+  });
 
   grid.querySelectorAll('.card').forEach(card => {
     const idx = parseInt(card.dataset.idx, 10);
@@ -970,21 +980,19 @@ function updateEditorPin() {
   const q    = state.questions[state.currentEditorIdx];
   const wrap = $('editorImageWrap');
   const img  = $('editorImage');
-  const existing = wrap.querySelector('.editor-pin');
-  if (existing) existing.remove();
+
+  wrap.querySelectorAll('.pin-svg').forEach(e => e.remove());
 
   const status = $('pinStatus');
   if (q.pinX !== null) {
-    // Converte coordenadas do espaço da imagem → espaço do elemento
-    const pct = imgPctToElemPct(img, q.pinX, q.pinY);
-    const pin = document.createElement('div');
-    pin.className = 'editor-pin';
-    pin.style.left = pct.left + '%';
-    pin.style.top  = pct.top  + '%';
-    pin.innerHTML  = '<div class="pin-marker"></div>';
-    wrap.appendChild(pin);
     status.classList.add('set');
     status.innerHTML = `<span class="strong">Alfinete fixado</span> em ${q.pinX.toFixed(1)}% × ${q.pinY.toFixed(1)}%`;
+    if (!img.naturalWidth) {
+      img.addEventListener('load', updateEditorPin, { once: true });
+      return;
+    }
+    wrap.insertAdjacentHTML('beforeend',
+      createPinArrowSVG(img.naturalWidth, img.naturalHeight, q.pinX, q.pinY));
   } else {
     status.classList.remove('set');
     status.innerHTML = `<span class="strong">Clique sobre a imagem</span> para fixar o alfinete na estrutura.`;
@@ -1079,16 +1087,10 @@ function loadPresQuestion() {
 function placePresPin(q) {
   const wrap = $('presImageWrap');
   const img  = $('presImage');
-  const old  = wrap.querySelector('.pres-pin');
-  if (old) old.remove();
+  wrap.querySelectorAll('.pin-svg').forEach(e => e.remove());
   if (q.pinX === null) return;
-  const pct = imgPctToElemPct(img, q.pinX, q.pinY);
-  const pin = document.createElement('div');
-  pin.className  = 'pres-pin';
-  pin.style.left = pct.left + '%';
-  pin.style.top  = pct.top  + '%';
-  pin.innerHTML  = '<div class="pin-marker large"></div>';
-  wrap.appendChild(pin);
+  wrap.insertAdjacentHTML('beforeend',
+    createPinArrowSVG(img.naturalWidth, img.naturalHeight, q.pinX, q.pinY));
 }
 
 function startTimer() {

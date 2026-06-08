@@ -59,17 +59,7 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
 .state-msg .msg-title { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:500; font-style:italic; color:var(--ink-soft); margin-bottom:8px; }
 .state-msg .msg-sub { font-size:14px; color:var(--muted); }
 
-/* PIN */
-.pin-marker { width:18px; height:44px; position:relative; filter:drop-shadow(0 2px 5px rgba(0,0,0,0.6)); }
-.pin-marker::before { content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:2px; height:32px; background:linear-gradient(to bottom,#ccc 0%,#888 40%,#222 100%); clip-path:polygon(0% 0%,100% 0%,58% 100%,42% 100%); }
-.pin-marker::after { content:''; position:absolute; top:0; left:50%; transform:translateX(-50%); width:13px; height:13px; background:radial-gradient(circle at 36% 30%,#ff9090 0%,#e02020 50%,#960000 100%); border-radius:50%; border:2px solid rgba(255,255,255,0.7); box-shadow:0 0 0 1.5px rgba(180,20,20,0.45),0 2px 5px rgba(0,0,0,0.55); }
-.pin-marker.large { width:26px; height:60px; filter:drop-shadow(0 3px 8px rgba(0,0,0,0.7)); }
-.pin-marker.large::before { width:2.5px; height:44px; }
-.pin-marker.large::after { width:17px; height:17px; border-width:2.5px; animation:pulse-ring 2s ease-in-out infinite; }
-@keyframes pulse-ring {
-  0%,100% { box-shadow:0 0 0 2px rgba(214,38,58,0.55),0 0 0 5px rgba(214,38,58,0.2),0 3px 7px rgba(0,0,0,0.55); }
-  50% { box-shadow:0 0 0 4px rgba(214,38,58,0.65),0 0 0 11px rgba(214,38,58,0.1),0 3px 7px rgba(0,0,0,0.55); }
-}
+/* PIN — seta SVG (sem estilos necessários; o SVG é inline) */
 
 /* PRESENTATION */
 .presentation { display:none; position:fixed; inset:0; background:#0a0a0a; z-index:200; flex-direction:column; }
@@ -84,7 +74,6 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
 .pres-stage { flex:1; display:flex; align-items:center; justify-content:center; position:relative; padding:24px; overflow:hidden; }
 .pres-image-wrap { position:relative; max-width:100%; max-height:100%; display:inline-block; }
 .pres-image-wrap img { display:block; max-width:100%; max-height:calc(100vh - 200px); object-fit:contain; }
-.pres-pin { position:absolute; pointer-events:none; transform:translate(-50%,-100%); z-index:10; }
 .pres-answer { position:absolute; bottom:30px; left:50%; transform:translateX(-50%); background:rgba(10,31,61,0.94); color:var(--paper); padding:18px 36px; border-radius:4px; border:1px solid var(--gold); font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; max-width:80%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.4); display:none; }
 .pres-answer.show { display:block; animation:fadeUp 0.3s ease; }
 @keyframes fadeUp { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
@@ -491,6 +480,49 @@ function recordEval(correct) {
   doAdvance();
 }
 
+// Gera SVG de seta pontilhada preta sobre a imagem.
+// Usa viewBox = dimensões naturais da imagem + preserveAspectRatio="xMidYMid meet",
+// o que espelha exatamente o comportamento de object-fit:contain —
+// garantindo que a seta aponte para o pixel correto em qualquer tamanho de tela.
+function createPinArrowSVG(nW, nH, pinX, pinY) {
+  const px = (pinX / 100) * nW;
+  const py = (pinY / 100) * nH;
+  const minD = Math.min(nW, nH);
+  const L  = minD * 0.13;                  // comprimento da seta
+  const sw = minD * 0.007;                  // espessura do traço
+  const dsh = minD * 0.024, gap = minD * 0.012; // tracejado
+  const al = minD * 0.034, aw = al * 0.52; // cabeça da seta
+
+  // Cauda vem do quadrante oposto ao do pino
+  let tx = px + (pinX < 50 ? L : -L);
+  let ty = py + (pinY < 50 ? L : -L);
+  tx = Math.max(L * 0.15, Math.min(nW - L * 0.15, tx));
+  ty = Math.max(L * 0.15, Math.min(nH - L * 0.15, ty));
+
+  const angle = Math.atan2(py - ty, px - tx);
+  const cos = Math.cos(angle), sin = Math.sin(angle);
+
+  // Linha termina na base da cabeça (não passa por baixo)
+  const ex = px - al * cos, ey = py - al * sin;
+  const a1x = ex + aw * sin, a1y = ey - aw * cos;
+  const a2x = ex - aw * sin, a2y = ey + aw * cos;
+  const f = v => v.toFixed(2);
+
+  return `<svg class="pin-svg" viewBox="0 0 ${nW} ${nH}" preserveAspectRatio="xMidYMid meet"
+    style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden;">
+    <line x1="${f(tx)}" y1="${f(ty)}" x2="${f(ex)}" y2="${f(ey)}"
+      stroke="white" stroke-width="${f(sw*3)}" stroke-linecap="round"
+      stroke-dasharray="${f(dsh)} ${f(gap)}"/>
+    <polygon points="${f(px)},${f(py)} ${f(a1x)},${f(a1y)} ${f(a2x)},${f(a2y)}"
+      fill="white" stroke="white" stroke-width="${f(sw)}" stroke-linejoin="round"/>
+    <line x1="${f(tx)}" y1="${f(ty)}" x2="${f(ex)}" y2="${f(ey)}"
+      stroke="black" stroke-width="${f(sw)}" stroke-linecap="round"
+      stroke-dasharray="${f(dsh)} ${f(gap)}"/>
+    <polygon points="${f(px)},${f(py)} ${f(a1x)},${f(a1y)} ${f(a2x)},${f(a2y)}"
+      fill="black"/>
+  </svg>`;
+}
+
 function getImageContentRect(img) {
   const nW = img.naturalWidth;
   const nH = img.naturalHeight;
@@ -669,16 +701,10 @@ function loadPresQuestion() {
 function placePin(q) {
   const wrap = $('presImageWrap');
   const img  = $('presImage');
-  const old  = wrap.querySelector('.pres-pin');
-  if (old) old.remove();
+  wrap.querySelectorAll('.pin-svg').forEach(e => e.remove());
   if (q.pinX === null) return;
-  const pct = imgPctToElemPct(img, q.pinX, q.pinY);
-  const pin = document.createElement('div');
-  pin.className  = 'pres-pin';
-  pin.style.left = pct.left + '%';
-  pin.style.top  = pct.top  + '%';
-  pin.innerHTML  = '<div class="pin-marker large"></div>';
-  wrap.appendChild(pin);
+  wrap.insertAdjacentHTML('beforeend',
+    createPinArrowSVG(img.naturalWidth, img.naturalHeight, q.pinX, q.pinY));
 }
 
 function startTimer() {
