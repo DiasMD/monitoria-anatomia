@@ -163,6 +163,7 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
 .pres-image-wrap { position: relative; max-width: 100%; max-height: 100%; display: inline-block; }
 .pres-image-wrap img { display: block; max-width: 100%; max-height: calc(100vh - 200px); object-fit: contain; }
 .pres-answer { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(10,31,61,0.94); color: var(--paper); padding: 18px 36px; border-radius: 4px; border: 1px solid var(--gold); font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; max-width: 80%; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: none; }
+.pres-hint { font-size: 15px; font-weight: 400; font-style: italic; color: var(--gold-soft); margin-top: 7px; letter-spacing: 0.02em; }
 .pres-answer.show { display: block; animation: fadeUp 0.3s ease; }
 @keyframes fadeUp { from { opacity:0; transform: translateX(-50%) translateY(8px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
 .pres-controls { padding: 18px 32px; background: rgba(10,10,10,0.95); border-top: 1px solid rgba(184,146,74,0.25); display: flex; align-items: center; justify-content: center; gap: 12px; }
@@ -447,6 +448,11 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
           <div class="field-help">Aparece ao revelar resposta durante a simulação.</div>
         </div>
         <div>
+          <label class="field-label" for="hintInput">Dica adicional (opcional)</label>
+          <input type="text" class="field-input" id="hintInput" placeholder="Ex.: Especificamente a artéria, não a veia">
+          <div class="field-help">Aparece abaixo da resposta na simulação — útil para estruturas próximas.</div>
+        </div>
+        <div>
           <label class="field-label" for="editorModuleSelect">Módulo</label>
           <select class="field-input" id="editorModuleSelect">
             <option value="">— sem módulo —</option>
@@ -674,6 +680,7 @@ function normalizeQuestion(q) {
     pinX:     q.pin_x  !== null && q.pin_x  !== undefined ? parseFloat(q.pin_x)  : null,
     pinY:     q.pin_y  !== null && q.pin_y  !== undefined ? parseFloat(q.pin_y)  : null,
     answer:   q.answer || '',
+    hint:     q.hint   || '',
     notes:    q.notes  || '',
     moduleId: q.module_id ?? null,
   };
@@ -965,7 +972,8 @@ function openEditor(idx) {
   $('editorNumber').textContent = idx + 1;
   $('editorImage').src = q.image;
   $('answerInput').value = q.answer || '';
-  $('notesInput').value = q.notes || '';
+  $('hintInput').value   = q.hint   || '';
+  $('notesInput').value  = q.notes  || '';
   $('editorModuleSelect').value = q.moduleId ?? '';
   updateEditorPin();
   $('editorModal').classList.add('active');
@@ -1033,17 +1041,19 @@ $('removePinBtn').addEventListener('click', () => {
 $('saveEditorBtn').addEventListener('click', async () => {
   const q        = state.questions[state.currentEditorIdx];
   const answer   = $('answerInput').value.trim();
+  const hint     = $('hintInput').value.trim();
   const notes    = $('notesInput').value.trim();
   const moduleId = $('editorModuleSelect').value ? parseInt($('editorModuleSelect').value) : null;
 
   const res = await fetch(`/api/questions/${q.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pin_x: q.pinX, pin_y: q.pinY, answer, notes, module_id: moduleId }),
+    body: JSON.stringify({ pin_x: q.pinX, pin_y: q.pinY, answer, hint, notes, module_id: moduleId }),
   });
 
   if (res.ok) {
     q.answer   = answer;
+    q.hint     = hint;
     q.notes    = notes;
     q.moduleId = moduleId;
     closeEditor(true);
@@ -1077,7 +1087,8 @@ function loadPresQuestion() {
   if (!q) return;
   $('presCurrent').textContent = state.currentPresIdx + 1;
   $('presImage').src = q.image;
-  $('presAnswer').textContent = q.answer || '(sem resposta cadastrada)';
+  $('presAnswer').innerHTML = escapeHTML(q.answer || '(sem resposta cadastrada)') +
+    (q.hint ? `<div class="pres-hint">${escapeHTML(q.hint)}</div>` : '');
   $('presAnswer').classList.remove('show');
   state.showingAnswer = false;
   $('presImage').onload = () => placePresPin(q);

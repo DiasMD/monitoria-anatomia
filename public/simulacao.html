@@ -80,6 +80,7 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
 .pres-image-wrap img { display:block; max-width:100%; max-height:calc(100vh - 200px); object-fit:contain; }
 .pres-answer { position:absolute; bottom:30px; left:50%; transform:translateX(-50%); background:rgba(10,31,61,0.94); color:var(--paper); padding:18px 36px; border-radius:4px; border:1px solid var(--gold); font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; max-width:80%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.4); display:none; }
 .pres-answer.show { display:block; animation:fadeUp 0.3s ease; }
+.pres-hint { font-size:15px; font-weight:400; font-style:italic; color:var(--gold-soft); margin-top:7px; letter-spacing:0.02em; }
 @keyframes fadeUp { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
 .pres-controls { padding:18px 32px; background:rgba(10,10,10,0.95); border-top:1px solid rgba(184,146,74,0.25); display:flex; align-items:center; justify-content:center; gap:12px; }
 .pres-btn { font-family:inherit; font-size:13px; font-weight:500; padding:10px 18px; border:1px solid rgba(212,180,124,0.4); background:transparent; color:var(--paper); cursor:pointer; border-radius:2px; transition:all 0.15s ease; display:inline-flex; align-items:center; gap:8px; letter-spacing:0.02em; }
@@ -168,6 +169,7 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
 .als-thumb { width:120px; height:80px; object-fit:contain; background:var(--paper-soft); border-radius:2px; }
 .als-answer { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:600; color:var(--ink); }
 .als-answer.empty { font-style:italic; color:var(--muted); font-size:16px; }
+.als-hint { font-size:13px; font-style:italic; color:var(--muted); margin-top:3px; }
 .als-footer { padding:20px 32px; border-top:1px solid var(--rule); display:flex; gap:12px; justify-content:center; flex-shrink:0; background:var(--paper-soft); }
 
 /* END SCREEN */
@@ -422,6 +424,7 @@ const state = {
 };
 
 function $(id) { return document.getElementById(id); }
+function escapeHTML(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function formatTime(s) { return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`; }
 
 async function checkStudentSession() {
@@ -553,7 +556,7 @@ function normalizeQuestion(q) {
     id: q.id, image: q.image_data, filename: q.filename || '',
     pinX: q.pin_x  !== null && q.pin_x  !== undefined ? parseFloat(q.pin_x)  : null,
     pinY: q.pin_y  !== null && q.pin_y  !== undefined ? parseFloat(q.pin_y)  : null,
-    answer: q.answer || '', notes: q.notes || '',
+    answer: q.answer || '', hint: q.hint || '', notes: q.notes || '',
     moduleId: q.module_id ?? null,
   };
 }
@@ -690,7 +693,8 @@ function loadPresQuestion() {
   if (!q) return;
   $('presCurrent').textContent = state.currentPresIdx + 1;
   $('presImage').src = q.image;
-  $('presAnswer').textContent = q.answer || '(sem resposta cadastrada)';
+  $('presAnswer').innerHTML = escapeHTML(q.answer || '(sem resposta cadastrada)') +
+    (q.hint ? `<div class="pres-hint">${escapeHTML(q.hint)}</div>` : '');
   $('presAnswer').classList.remove('show');
   state.showingAnswer = false;
   setEvalMode(false);
@@ -742,7 +746,7 @@ function nextQuestion() {
   // Modo endlist: registra no log e avança sem mostrar resposta
   if (state.answerMode === 'endlist') {
     if (!state.sessionLog.find(l => l.idx === state.currentPresIdx)) {
-      state.sessionLog.push({ idx: state.currentPresIdx, image: q.image, answer: q.answer, id: q.id });
+      state.sessionLog.push({ idx: state.currentPresIdx, image: q.image, answer: q.answer, hint: q.hint, id: q.id });
     }
     doAdvance();
     return;
@@ -800,7 +804,7 @@ async function endSimulation() {
   if (state.answerMode === 'endlist') {
     const q = state.questions[state.currentPresIdx];
     if (!state.sessionLog.find(l => l.idx === state.currentPresIdx)) {
-      state.sessionLog.push({ idx: state.currentPresIdx, image: q.image, answer: q.answer, id: q.id });
+      state.sessionLog.push({ idx: state.currentPresIdx, image: q.image, answer: q.answer, hint: q.hint, id: q.id });
     }
     renderAnswerList();
     $('answerListScreen').classList.add('active');
@@ -819,6 +823,7 @@ function renderAnswerList() {
       <img class="als-thumb" src="${item.image}" alt="Q${i+1}">
       <div>
         <div class="als-answer ${item.answer ? '' : 'empty'}">${item.answer || '(sem resposta cadastrada)'}</div>
+        ${item.hint ? `<div class="als-hint">${escapeHTML(item.hint)}</div>` : ''}
         <div class="als-eval">
           <button class="als-eval-btn acertei" data-idx="${i}" data-correct="1">✓ Acertei</button>
           <button class="als-eval-btn errei" data-idx="${i}" data-correct="0">✗ Errei</button>

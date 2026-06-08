@@ -88,7 +88,7 @@ db.exec(`
 `);
 
 // Migrações para instalações antigas
-['module_id INTEGER', 'image_url TEXT DEFAULT ""'].forEach(col => {
+['module_id INTEGER', 'image_url TEXT DEFAULT ""', 'hint TEXT DEFAULT ""'].forEach(col => {
   try { db.exec(`ALTER TABLE questions ADD COLUMN ${col}`); } catch {}
 });
 
@@ -223,7 +223,7 @@ app.get('/api/questions', (req, res) => {
   const { modules } = req.query;
   let sql = `SELECT id, position,
     CASE WHEN image_url != '' THEN image_url ELSE image_data END as image_data,
-    filename, pin_x, pin_y, answer, notes, module_id
+    filename, pin_x, pin_y, answer, notes, hint, module_id
     FROM questions`;
   const params = [];
   if (modules) {
@@ -241,19 +241,19 @@ app.get('/api/questions', (req, res) => {
 app.post('/api/questions', requireMonitor, upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Arquivo de imagem obrigatório' });
   const imageUrl = `/uploads/${req.file.filename}`;
-  const { module_id, pin_x, pin_y, answer, notes } = req.body;
+  const { module_id, pin_x, pin_y, answer, notes, hint } = req.body;
   const { m } = db.prepare('SELECT COALESCE(MAX(position),-1) as m FROM questions').get();
   const result = db.prepare(
-    `INSERT INTO questions (position, image_url, image_data, filename, pin_x, pin_y, answer, notes, module_id)
-     VALUES (?,?,?,?,?,?,?,?,?)`
+    `INSERT INTO questions (position, image_url, image_data, filename, pin_x, pin_y, answer, notes, hint, module_id)
+     VALUES (?,?,?,?,?,?,?,?,?,?)`
   ).run(m + 1, imageUrl, '', req.file.originalname, pin_x ?? null, pin_y ?? null,
-        answer || '', notes || '', module_id ? parseInt(module_id) : null);
+        answer || '', notes || '', hint || '', module_id ? parseInt(module_id) : null);
   res.json(rowToQuestion(db.prepare('SELECT * FROM questions WHERE id=?').get(result.lastInsertRowid)));
 });
 
 // Importação via JSON (base64) — para arquivos exportados
 app.post('/api/questions/import-json', requireMonitor, (req, res) => {
-  const { image_data, filename, pin_x, pin_y, answer, notes, module_id } = req.body;
+  const { image_data, filename, pin_x, pin_y, answer, notes, hint, module_id } = req.body;
   if (!image_data) return res.status(400).json({ error: 'image_data obrigatório' });
 
   // Converte base64 para arquivo
@@ -270,19 +270,19 @@ app.post('/api/questions/import-json', requireMonitor, (req, res) => {
 
   const { m } = db.prepare('SELECT COALESCE(MAX(position),-1) as m FROM questions').get();
   const result = db.prepare(
-    `INSERT INTO questions (position, image_url, image_data, filename, pin_x, pin_y, answer, notes, module_id)
-     VALUES (?,?,?,?,?,?,?,?,?)`
+    `INSERT INTO questions (position, image_url, image_data, filename, pin_x, pin_y, answer, notes, hint, module_id)
+     VALUES (?,?,?,?,?,?,?,?,?,?)`
   ).run(m + 1, imageUrl, imageUrl ? '' : image_data, filename || '',
-        pin_x ?? null, pin_y ?? null, answer || '', notes || '',
+        pin_x ?? null, pin_y ?? null, answer || '', notes || '', hint || '',
         module_id ? parseInt(module_id) : null);
   res.json(rowToQuestion(db.prepare('SELECT * FROM questions WHERE id=?').get(result.lastInsertRowid)));
 });
 
 app.put('/api/questions/:id', requireMonitor, (req, res) => {
-  const { pin_x, pin_y, answer, notes, module_id } = req.body;
+  const { pin_x, pin_y, answer, notes, hint, module_id } = req.body;
   db.prepare(
-    'UPDATE questions SET pin_x=?, pin_y=?, answer=?, notes=?, module_id=? WHERE id=?'
-  ).run(pin_x ?? null, pin_y ?? null, answer || '', notes || '',
+    'UPDATE questions SET pin_x=?, pin_y=?, answer=?, notes=?, hint=?, module_id=? WHERE id=?'
+  ).run(pin_x ?? null, pin_y ?? null, answer || '', notes || '', hint || '',
         module_id !== undefined ? (module_id ? parseInt(module_id) : null) : null,
         req.params.id);
   res.json(rowToQuestion(db.prepare('SELECT * FROM questions WHERE id=?').get(req.params.id)));
