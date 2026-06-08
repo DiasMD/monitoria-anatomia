@@ -13,12 +13,31 @@ const PORT = process.env.PORT || 3000;
 const MONITOR_USER   = process.env.MONITOR_USER   || 'monitores.ufma';
 const MONITOR_PASS   = process.env.MONITOR_PASS   || 'monitoriatopografica123';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'ufma-anatomia-secret-2024';
-const DB_PATH        = process.env.DB_PATH        || path.join(__dirname, 'data.db');
-const UPLOADS_DIR    = process.env.UPLOADS_PATH   || path.join(__dirname, 'uploads');
+const DATA_DIR    = process.env.ANATOMIA_DATA_DIR || path.join(require('os').homedir(), '.anatomia-data');
+const DB_PATH     = process.env.DB_PATH        || path.join(DATA_DIR, 'data.db');
+const UPLOADS_DIR = process.env.UPLOADS_PATH   || path.join(DATA_DIR, 'uploads');
 
 // ── Pastas ────────────────────────────────────────────────
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+// ── Migração automática: move dados da pasta antiga (dentro do projeto) ──
+(function migrateOldData() {
+  const oldDb = path.join(__dirname, 'data.db');
+  const oldUploads = path.join(__dirname, 'uploads');
+  if (fs.existsSync(oldDb) && !fs.existsSync(DB_PATH)) {
+    try { fs.copyFileSync(oldDb, DB_PATH); fs.unlinkSync(oldDb); } catch {}
+  }
+  if (fs.existsSync(oldUploads) && oldUploads !== UPLOADS_DIR) {
+    try {
+      for (const f of fs.readdirSync(oldUploads)) {
+        const src = path.join(oldUploads, f);
+        const dst = path.join(UPLOADS_DIR, f);
+        if (!fs.existsSync(dst)) fs.copyFileSync(src, dst);
+      }
+    } catch {}
+  }
+})();
 
 // ── Banco de dados ────────────────────────────────────────
 const db = new DatabaseSync(DB_PATH);
