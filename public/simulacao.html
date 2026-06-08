@@ -874,35 +874,43 @@ function updatePauseBtn() {
 }
 
 function exitPresentation() {
-  stopTimer(); clearTimeout(state.answerTimer);
-  $('presentation').classList.remove('active');
-  if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
-  $('setupScreen').style.display = 'flex';
+  endSimulation(true);
 }
 
-async function endSimulation() {
+async function endSimulation(earlyExit = false) {
   stopTimer(); clearTimeout(state.answerTimer);
   setEvalMode(false);
+  $('hintArea').style.display = 'none';
   $('presentation').classList.remove('active');
   if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
 
-  // Marca questões como vistas no localStorage (para alunos não logados)
-  try {
-    const ids = state.questions.map(q => q.id);
-    const prev = JSON.parse(localStorage.getItem('anatomia_vistas') || '[]');
-    localStorage.setItem('anatomia_vistas', JSON.stringify([...new Set([...prev, ...ids])]));
-  } catch {}
-
   if (state.answerMode === 'endlist') {
-    const q = state.questions[state.currentPresIdx];
-    if (!state.sessionLog.find(l => l.idx === state.currentPresIdx)) {
-      state.sessionLog.push({ idx: state.currentPresIdx, image: q.image, answer: q.answer, hint: q.hint, id: q.id });
+    // Encerramento natural: adiciona questão atual ao log
+    if (!earlyExit) {
+      const q = state.questions[state.currentPresIdx];
+      if (!state.sessionLog.find(l => l.idx === state.currentPresIdx))
+        state.sessionLog.push({ idx: state.currentPresIdx, image: q.image, answer: q.answer, hint: q.hint, id: q.id });
     }
+    // Sem nenhuma questão feita: volta ao setup silenciosamente
+    if (state.sessionLog.length === 0) { $('setupScreen').style.display = 'flex'; return; }
+    // Marca como vistas no localStorage só as que estão no log
+    try {
+      const ids = state.sessionLog.map(l => l.id);
+      const prev = JSON.parse(localStorage.getItem('anatomia_vistas') || '[]');
+      localStorage.setItem('anatomia_vistas', JSON.stringify([...new Set([...prev, ...ids])]));
+    } catch {}
     renderAnswerList();
     $('answerListScreen').classList.add('active');
   } else {
-    // Modo imediato: salva resultados acumulados
+    // Modo imediato: conta só as avaliadas (resultados)
+    if (state.resultados.length === 0 && earlyExit) { $('setupScreen').style.display = 'flex'; return; }
     if (state.resultados.length > 0) await saveResultados(state.resultados);
+    // Marca como vistas no localStorage só as avaliadas
+    try {
+      const ids = state.resultados.map(r => r.question_id);
+      const prev = JSON.parse(localStorage.getItem('anatomia_vistas') || '[]');
+      localStorage.setItem('anatomia_vistas', JSON.stringify([...new Set([...prev, ...ids])]));
+    } catch {}
     $('endScreen').classList.add('active');
   }
 }
