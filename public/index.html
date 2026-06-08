@@ -94,7 +94,7 @@ body {
 
 .cards {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 18px;
   width: 100%;
 }
@@ -149,7 +149,7 @@ body {
   letter-spacing: 0.01em;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 700px) {
   body { padding: 32px 20px; }
   .logo { width: 120px; height: 120px; margin-bottom: 24px; }
   .eyebrow { font-size: 9.5px; letter-spacing: 0.22em; }
@@ -158,9 +158,9 @@ body {
   .monitors { font-size: 18px; margin-bottom: 36px; }
   .cards { grid-template-columns: 1fr; max-width: 320px; gap: 14px; }
   .credit { font-size: 11px; }
-  .card { padding: 36px 28px; gap: 12px; flex-direction: row; align-items: center; text-align: left; }
-  .card-icon { width: 52px; height: 52px; flex-shrink: 0; }
-  .card-title { font-size: 26px; }
+  .card { padding: 28px 20px; gap: 12px; flex-direction: row; align-items: center; text-align: left; }
+  .card-icon { width: 48px; height: 48px; flex-shrink: 0; }
+  .card-title { font-size: 24px; }
   .card-sub { font-size: 12px; }
 }
 .credit {
@@ -190,7 +190,7 @@ body {
   <div class="monitors">Monitores: <strong>Breno Dias</strong> &amp; <strong>Isabela Nogueira</strong></div>
 
   <div class="cards">
-    <a href="/simulacao" class="card">
+    <a href="/aluno-login" class="card">
       <div class="card-icon">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gold-soft)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
@@ -198,7 +198,17 @@ body {
         </svg>
       </div>
       <div class="card-title">Sou Aluno</div>
-      <div class="card-sub">Acessar a simulação da prova prática</div>
+      <div class="card-sub">Entrar ou criar conta para a simulação</div>
+    </a>
+
+    <a href="/ranking" class="card">
+      <div class="card-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gold-soft)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 20V10M12 20V4M6 20v-6"/>
+        </svg>
+      </div>
+      <div class="card-title">Ranking</div>
+      <div class="card-sub">Veja a classificação dos alunos</div>
     </a>
 
     <a href="/login" class="card monitor">
@@ -208,8 +218,8 @@ body {
           <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
         </svg>
       </div>
-      <div class="card-title">Sou Monitor</div>
-      <div class="card-sub">Gerenciar questões e configurar a simulação</div>
+      <div class="card-title">Monitor</div>
+      <div class="card-sub">Gerenciar questões e alunos</div>
     </a>
   </div>
   <div class="credit">

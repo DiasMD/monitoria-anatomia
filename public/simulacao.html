@@ -99,6 +99,36 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
 .progress-fill.warning { background:#FFB347; }
 .progress-fill.critical { background:var(--pin); }
 
+/* STUDENT BADGE */
+.student-badge { display:flex; align-items:center; gap:8px; padding:6px 12px; border:1px solid rgba(184,146,74,0.3); border-radius:20px; margin-left:auto; }
+.sb-avatar { width:28px; height:28px; border-radius:50%; overflow:hidden; background:rgba(184,146,74,0.15); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--gold-soft); flex-shrink:0; }
+.sb-avatar img { width:100%; height:100%; object-fit:cover; }
+.sb-name { font-size:12px; font-weight:600; max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sb-login { font-size:12px; color:var(--gold-soft); text-decoration:none; letter-spacing:0.03em; }
+.sb-login:hover { color:var(--gold); }
+
+/* EVAL BUTTONS */
+.pres-btn.acertei { background:rgba(46,107,63,0.9); border-color:rgba(46,107,63,0.7); color:white; font-weight:700; }
+.pres-btn.acertei:hover { background:#2e6b3f; border-color:#2e6b3f; color:white; }
+.pres-btn.errei { background:rgba(214,38,58,0.85); border-color:rgba(214,38,58,0.6); color:white; font-weight:700; }
+.pres-btn.errei:hover { background:var(--pin); border-color:var(--pin); color:white; }
+
+/* RESULT SAVED TOAST */
+.result-toast { position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:rgba(46,107,63,0.95); color:white; padding:10px 20px; border-radius:20px; font-size:13px; font-weight:600; opacity:0; pointer-events:none; transition:opacity 0.3s ease; z-index:300; }
+.result-toast.show { opacity:1; }
+
+/* ALS EVAL */
+.als-eval { display:flex; gap:8px; margin-top:8px; }
+.als-eval-btn { font-family:inherit; font-size:12px; font-weight:600; padding:6px 14px; border-radius:20px; border:1.5px solid var(--rule-strong); background:transparent; cursor:pointer; transition:all 0.15s ease; }
+.als-eval-btn.acertei { border-color:rgba(46,107,63,0.5); color:#2e6b3f; }
+.als-eval-btn.acertei.selected { background:#2e6b3f; color:white; border-color:#2e6b3f; }
+.als-eval-btn.errei { border-color:rgba(214,38,58,0.4); color:var(--pin); }
+.als-eval-btn.errei.selected { background:var(--pin); color:white; border-color:var(--pin); }
+.als-save-row { text-align:center; padding:16px; }
+.als-save-btn { font-family:inherit; font-size:13px; font-weight:700; padding:12px 32px; background:#2e6b3f; color:white; border:none; border-radius:3px; cursor:pointer; display:none; }
+.als-save-btn:hover { background:#246134; }
+.als-save-btn.visible { display:inline-block; }
+
 /* MODULE SELECTION */
 .module-select-screen { display:none; flex-direction:column; align-items:center; justify-content:center; min-height:calc(100vh - 130px); padding:40px 24px; text-align:center; }
 .module-select-screen.active { display:flex; }
@@ -241,6 +271,7 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Início
     </a>
+    <div id="studentBadge"></div>
   </div>
 </header>
 
@@ -331,6 +362,8 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" id="pauseIcon"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
       <span id="pauseLabel">Pausar</span>
     </button>
+    <button class="pres-btn acertei" id="acerteiBtn" style="display:none">✓ Acertei</button>
+    <button class="pres-btn errei" id="erreiBtn" style="display:none">✗ Errei</button>
     <button class="pres-btn" id="nextBtn">
       Próxima
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -345,6 +378,7 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
     </button>
   </div>
 </div>
+<div class="result-toast" id="resultToast"></div>
 
 <!-- ANSWER LIST SCREEN -->
 <div class="answer-list-screen" id="answerListScreen">
@@ -357,6 +391,9 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
   </div>
   <div class="als-body">
     <div class="als-list" id="alsList"></div>
+  </div>
+  <div class="als-save-row">
+    <button class="als-save-btn" id="alsSaveBtn">Salvar pontuação</button>
   </div>
   <div class="als-footer">
     <button class="end-btn primary" id="alsRestartBtn">Refazer</button>
@@ -379,16 +416,80 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
 const state = {
   questions: [],
   modules: [],
-  selectedModuleIds: [],  // módulos escolhidos pelo aluno
-  answerMode: 'immediate', // 'immediate' | 'endlist'
-  sessionLog: [],          // [{image, answer}] para modo endlist
+  selectedModuleIds: [],
+  answerMode: 'immediate',
+  sessionLog: [],
   timePerQuestion: 60,
   currentPresIdx: 0, timer: null, answerTimer: null,
   remaining: 0, paused: false, showingAnswer: false,
+  student: null,
+  resultados: [],    // [{question_id, correct}] acumulados na sessão
+  waitingEval: false,
 };
 
 function $(id) { return document.getElementById(id); }
 function formatTime(s) { return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`; }
+
+async function checkStudentSession() {
+  try {
+    const res = await fetch('/api/alunos/me');
+    const { student } = await res.json();
+    state.student = student;
+    renderStudentBadge();
+  } catch {}
+}
+
+function renderStudentBadge() {
+  const el = $('studentBadge');
+  if (!el) return;
+  if (!state.student) {
+    el.innerHTML = `<a class="sb-login" href="/aluno-login">Entrar / Criar conta</a>`;
+    return;
+  }
+  const avatar = state.student.photo_url
+    ? `<img src="${state.student.photo_url}" alt="">`
+    : state.student.username.slice(0,2).toUpperCase();
+  el.innerHTML = `
+    <div class="student-badge">
+      <div class="sb-avatar">${avatar}</div>
+      <span class="sb-name">${state.student.username}</span>
+    </div>`;
+}
+
+function showResultToast(msg) {
+  const t = $('resultToast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+async function saveResultados(resultados) {
+  if (!state.student || !resultados.length) return;
+  try {
+    await fetch('/api/simulacao/resultado', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resultados }),
+    });
+    showResultToast(`✓ Pontuação salva — ${resultados.filter(r => r.correct).length} acertos`);
+  } catch {
+    showResultToast('Erro ao salvar pontuação');
+  }
+}
+
+function setEvalMode(on) {
+  state.waitingEval = on;
+  $('acerteiBtn').style.display = on ? 'inline-flex' : 'none';
+  $('erreiBtn').style.display   = on ? 'inline-flex' : 'none';
+  $('nextBtn').textContent = on ? 'Pular →' : 'Próxima';
+}
+
+function recordEval(correct) {
+  const q = state.questions[state.currentPresIdx];
+  if (q?.id) state.resultados.push({ question_id: q.id, correct });
+  setEvalMode(false);
+  doAdvance();
+}
 
 function getImageContentRect(img) {
   const nW = img.naturalWidth;
@@ -536,11 +637,14 @@ function startPresentation() {
   state.timePerQuestion = Math.max(5, parseInt($('timeInput').value, 10) || 60);
   state.currentPresIdx  = 0;
   state.sessionLog      = [];
+  state.resultados      = [];
+  state.waitingEval     = false;
   $('presTotal').textContent = state.questions.length;
   $('setupScreen').style.display = 'none';
   $('presentation').classList.add('active');
   $('endScreen').classList.remove('active');
   $('answerListScreen').classList.remove('active');
+  setEvalMode(false);
   loadPresQuestion();
 }
 
@@ -552,6 +656,7 @@ function loadPresQuestion() {
   $('presAnswer').textContent = q.answer || '(sem resposta cadastrada)';
   $('presAnswer').classList.remove('show');
   state.showingAnswer = false;
+  setEvalMode(false);
   $('presImage').onload = () => placePin(q);
   if ($('presImage').complete) placePin(q);
   state.remaining = state.timePerQuestion;
@@ -603,19 +708,20 @@ function updateTimer() {
 function nextQuestion() {
   stopTimer(); clearTimeout(state.answerTimer);
   const q = state.questions[state.currentPresIdx];
-  // Registra no log (para modo endlist)
+  // Modo endlist: registra no log e avança sem mostrar resposta
   if (state.answerMode === 'endlist') {
     if (!state.sessionLog.find(l => l.idx === state.currentPresIdx)) {
-      state.sessionLog.push({ idx: state.currentPresIdx, image: q.image, answer: q.answer });
+      state.sessionLog.push({ idx: state.currentPresIdx, image: q.image, answer: q.answer, id: q.id });
     }
-    doAdvance(); // sem mostrar resposta
+    doAdvance();
     return;
   }
   // Modo imediato
+  if (state.waitingEval) { setEvalMode(false); doAdvance(); return; }
   if (!state.showingAnswer) {
     state.showingAnswer = true;
     $('presAnswer').classList.add('show');
-    state.answerTimer = setTimeout(doAdvance, 3000);
+    setEvalMode(true);
   } else { doAdvance(); }
 }
 
@@ -654,39 +760,82 @@ function exitPresentation() {
   $('setupScreen').style.display = 'flex';
 }
 
-function endSimulation() {
+async function endSimulation() {
   stopTimer(); clearTimeout(state.answerTimer);
+  setEvalMode(false);
   $('presentation').classList.remove('active');
   if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
 
   if (state.answerMode === 'endlist') {
-    // Garante que a última questão está no log
     const q = state.questions[state.currentPresIdx];
     if (!state.sessionLog.find(l => l.idx === state.currentPresIdx)) {
-      state.sessionLog.push({ idx: state.currentPresIdx, image: q.image, answer: q.answer });
+      state.sessionLog.push({ idx: state.currentPresIdx, image: q.image, answer: q.answer, id: q.id });
     }
     renderAnswerList();
     $('answerListScreen').classList.add('active');
   } else {
+    // Modo imediato: salva resultados acumulados
+    if (state.resultados.length > 0) await saveResultados(state.resultados);
     $('endScreen').classList.add('active');
   }
 }
 
 function renderAnswerList() {
-  $('alsList').innerHTML = state.sessionLog.map((item, i) => `
-    <div class="als-item">
+  const log = state.sessionLog;
+  $('alsList').innerHTML = log.map((item, i) => `
+    <div class="als-item" style="display:grid;grid-template-columns:48px 120px 1fr;gap:16px;align-items:start">
       <div class="als-num">${i + 1}</div>
       <img class="als-thumb" src="${item.image}" alt="Q${i+1}">
-      <div class="als-answer ${item.answer ? '' : 'empty'}">${item.answer || '(sem resposta cadastrada)'}</div>
+      <div>
+        <div class="als-answer ${item.answer ? '' : 'empty'}">${item.answer || '(sem resposta cadastrada)'}</div>
+        <div class="als-eval">
+          <button class="als-eval-btn acertei" data-idx="${i}" data-correct="1">✓ Acertei</button>
+          <button class="als-eval-btn errei" data-idx="${i}" data-correct="0">✗ Errei</button>
+        </div>
+      </div>
     </div>
   `).join('');
+
+  // Evento de avaliação na lista
+  $('alsList').querySelectorAll('.als-eval-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      const correct = btn.dataset.correct === '1';
+      // Marca visualmente
+      btn.closest('.als-eval').querySelectorAll('.als-eval-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      // Registra no log
+      log[idx].correct = correct;
+      checkAlsSaveBtn();
+    });
+  });
+  checkAlsSaveBtn();
 }
+
+function checkAlsSaveBtn() {
+  const allMarked = state.sessionLog.every(item => item.correct !== undefined);
+  const btn = $('alsSaveBtn');
+  if (allMarked) btn.classList.add('visible');
+  else btn.classList.remove('visible');
+}
+
+$('alsSaveBtn').addEventListener('click', async () => {
+  const resultados = state.sessionLog
+    .filter(item => item.id && item.correct !== undefined)
+    .map(item => ({ question_id: item.id, correct: item.correct }));
+  await saveResultados(resultados);
+  $('alsSaveBtn').disabled = true;
+  $('alsSaveBtn').textContent = 'Salvo!';
+});
 
 $('alsRestartBtn').addEventListener('click', () => {
   $('answerListScreen').classList.remove('active');
   startPresentation();
 });
 $('alsBackBtn').addEventListener('click', () => { window.location.href = '/'; });
+
+$('acerteiBtn').addEventListener('click', () => recordEval(true));
+$('erreiBtn').addEventListener('click', () => recordEval(false));
 
 $('startBtn').addEventListener('click', startPresentation);
 $('prevBtn').addEventListener('click', prevQuestion);
@@ -720,6 +869,7 @@ document.querySelector('.pres-stage').addEventListener('touchend', e => {
     dx < 0 ? nextQuestion() : prevQuestion();
 }, { passive: true });
 
+checkStudentSession();
 loadAndShowModules();
 </script>
 </body>

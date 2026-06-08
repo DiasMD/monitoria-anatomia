@@ -242,6 +242,27 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--paper); padding: 12px 22px; border-radius: 2px; font-size: 13px; font-weight: 500; letter-spacing: 0.02em; opacity: 0; pointer-events: none; transition: all 0.25s ease; z-index: 500; border-left: 3px solid var(--gold); box-shadow: var(--shadow-lg); }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* ALUNOS MODAL */
+.alunos-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.alunos-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted); font-weight: 600; padding: 0 12px 10px; text-align: left; border-bottom: 2px solid var(--rule); }
+.alunos-table td { padding: 12px 12px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+.alunos-table tr:hover td { background: rgba(184,146,74,0.04); }
+.aluno-avatar { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: var(--paper-soft); border: 1px solid var(--rule); display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 14px; font-weight: 600; color: var(--muted); flex-shrink: 0; }
+.aluno-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.aluno-name-cell { display: flex; align-items: center; gap: 10px; }
+.aluno-score { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600; }
+.aluno-edit-form { display: none; padding: 14px; background: var(--paper-soft); border-radius: 3px; margin-top: 8px; }
+.aluno-edit-form.open { display: block; }
+.aluno-edit-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.aluno-edit-row input[type="text"] { font-family: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid var(--rule-strong); background: var(--paper); border-radius: 2px; color: var(--ink); flex: 1; min-width: 140px; }
+.aluno-edit-row input[type="file"] { font-size: 12px; color: var(--muted); }
+.aluno-actions { display: flex; gap: 6px; }
+.btn-sm { font-family: inherit; font-size: 11px; padding: 5px 10px; border: 1px solid var(--rule-strong); background: transparent; color: var(--ink); cursor: pointer; border-radius: 2px; font-weight: 500; transition: all 0.15s; }
+.btn-sm:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.btn-sm.danger:hover { background: var(--pin); border-color: var(--pin); color: white; }
+.btn-sm.primary { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+.btn-sm.primary:hover { background: var(--gold-soft); }
+
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
 /* ===== MOBILE ===== */
@@ -387,6 +408,10 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
     <button class="btn" id="clearBtn">
       <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Limpar tudo
+    </button>
+    <button class="btn" id="alunosBtn">
+      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Alunos
     </button>
     <button class="btn btn-primary" id="startBtn">
       <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
@@ -546,6 +571,30 @@ body { background-image: radial-gradient(ellipse at top left, rgba(184,146,74,0.
     <button class="end-btn primary" id="restartBtn">Refazer simulação</button>
     <button class="end-btn" id="reviewBtn">Revisar respostas</button>
     <button class="end-btn" id="backToSetupBtn">Voltar ao painel</button>
+  </div>
+</div>
+
+<!-- ALUNOS MODAL -->
+<div class="modal-overlay" id="alunosModal">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-header">
+      <div class="modal-title serif">Gerenciar Alunos</div>
+      <button class="modal-close" id="alunosClose">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div style="padding:24px;overflow-y:auto;max-height:70vh">
+      <div id="alunosLoading" style="text-align:center;padding:40px;color:var(--muted)">
+        <div class="loading-state"><div class="spin"></div></div>
+      </div>
+      <div id="alunosEmpty" style="display:none;text-align:center;padding:40px">
+        <div class="empty-state"><div class="title">Nenhum aluno cadastrado</div><div class="sub">Os alunos aparecem aqui após criarem conta.</div></div>
+      </div>
+      <table class="alunos-table" id="alunosTable" style="display:none">
+        <thead><tr><th>Aluno</th><th>Acertos</th><th>Total</th><th></th></tr></thead>
+        <tbody id="alunosBody"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -1254,6 +1303,85 @@ document.querySelector('.pres-stage').addEventListener('touchend', e => {
 if ('ontouchstart' in window) {
   $('uploadTitle').textContent = 'Toque para selecionar do álbum';
 }
+
+// ===== ALUNOS =====
+function initials(name) { return (name || '?').slice(0, 2).toUpperCase(); }
+
+async function openAlunosModal() {
+  $('alunosModal').classList.add('active');
+  $('alunosLoading').style.display = 'block';
+  $('alunosEmpty').style.display = 'none';
+  $('alunosTable').style.display = 'none';
+  try {
+    const res = await fetch('/api/alunos');
+    const alunos = await res.json();
+    $('alunosLoading').style.display = 'none';
+    if (!alunos.length) { $('alunosEmpty').style.display = 'block'; return; }
+    $('alunosTable').style.display = 'table';
+    renderAlunosTable(alunos);
+  } catch { $('alunosLoading').innerHTML = '<p style="color:var(--pin)">Erro ao carregar alunos.</p>'; }
+}
+
+function renderAlunosTable(alunos) {
+  $('alunosBody').innerHTML = alunos.map(a => {
+    const avatar = a.photo_url
+      ? `<img src="${a.photo_url}" alt="">`
+      : initials(a.username);
+    return `
+      <tr id="aluno-row-${a.id}">
+        <td>
+          <div class="aluno-name-cell">
+            <div class="aluno-avatar">${avatar}</div>
+            <strong>${escapeHTML(a.username)}</strong>
+          </div>
+          <div class="aluno-edit-form" id="aluno-edit-${a.id}">
+            <div class="aluno-edit-row">
+              <input type="text" id="aluno-username-${a.id}" value="${escapeHTML(a.username)}" placeholder="Usuário">
+              <input type="file" id="aluno-foto-${a.id}" accept="image/*">
+              <button class="btn-sm primary" onclick="saveAluno(${a.id})">Salvar</button>
+              <button class="btn-sm" onclick="toggleEdit(${a.id})">Cancelar</button>
+            </div>
+          </div>
+        </td>
+        <td><span class="aluno-score">${a.acertos}</span></td>
+        <td>${a.total}</td>
+        <td>
+          <div class="aluno-actions">
+            <button class="btn-sm" onclick="toggleEdit(${a.id})">Editar</button>
+            <button class="btn-sm danger" onclick="deleteAluno(${a.id}, '${escapeHTML(a.username)}')">Remover</button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function toggleEdit(id) {
+  const form = $(`aluno-edit-${id}`);
+  form.classList.toggle('open');
+}
+
+async function saveAluno(id) {
+  const username = $(`aluno-username-${id}`).value.trim();
+  const fotoFile = $(`aluno-foto-${id}`).files[0];
+  if (!username) return toast('Usuário não pode ser vazio.');
+  const form = new FormData();
+  form.append('username', username);
+  if (fotoFile) form.append('foto', fotoFile);
+  const res = await fetch(`/api/alunos/${id}`, { method: 'PUT', body: form });
+  if (res.ok) { toast('Aluno atualizado.'); await openAlunosModal(); }
+  else { const d = await res.json(); toast(d.error || 'Erro ao salvar.'); }
+}
+
+async function deleteAluno(id, username) {
+  if (!confirm(`Remover o aluno "${username}" e todo o histórico de pontuação?`)) return;
+  const res = await fetch(`/api/alunos/${id}`, { method: 'DELETE' });
+  if (res.ok) { toast('Aluno removido.'); await openAlunosModal(); }
+  else toast('Erro ao remover aluno.');
+}
+
+$('alunosBtn').addEventListener('click', openAlunosModal);
+$('alunosClose').addEventListener('click', () => $('alunosModal').classList.remove('active'));
+$('alunosModal').addEventListener('click', e => { if (e.target === $('alunosModal')) $('alunosModal').classList.remove('active'); });
 
 // ===== INIT =====
 checkAuth().then(async () => {

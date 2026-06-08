@@ -5,6 +5,7 @@ const multer   = require('multer');
 const { DatabaseSync } = require('node:sqlite');
 const path     = require('path');
 const fs       = require('fs');
+const crypto   = require('crypto');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -43,6 +44,27 @@ db.exec(`
     notes      TEXT    DEFAULT '',
     module_id  INTEGER,
     created_at TEXT    DEFAULT (datetime('now'))
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS students (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    username      TEXT    UNIQUE NOT NULL,
+    password_hash TEXT    NOT NULL,
+    password_salt TEXT    NOT NULL,
+    photo_url     TEXT    DEFAULT '',
+    created_at    TEXT    DEFAULT (datetime('now'))
+  )
+`);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS simulation_results (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id   INTEGER NOT NULL,
+    question_id  INTEGER NOT NULL,
+    correct      INTEGER NOT NULL DEFAULT 0,
+    simulated_at TEXT    DEFAULT (datetime('now')),
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
   )
 `);
 
@@ -89,6 +111,28 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 25 * 1024 * 1024 } });
 
+const photoStorage = multer.diskStorage({
+  destination: UPLOADS_DIR,
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+    cb(null, `foto-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+  },
+});
+const photoUpload = multer({ storage: photoStorage, limits: { fileSize: 5 * 1024 * 1024 } });
+
+// ── Hashing de senha ──────────────────────────────────────
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+  return { hash, salt };
+}
+function verifyPassword(password, hash, salt) {
+  try {
+    const derived = crypto.scryptSync(password, salt, 64).toString('hex');
+    return crypto.timingSafeEqual(Buffer.from(derived, 'hex'), Buffer.from(hash, 'hex'));
+  } catch { return false; }
+}
+
 // ── Middleware ────────────────────────────────────────────
 app.use(express.json({ limit: '50mb' })); // menor agora — sem base64
 app.use(express.urlencoded({ extended: true }));
@@ -103,6 +147,10 @@ app.use('/uploads', express.static(UPLOADS_DIR)); // serve os arquivos de imagem
 
 function requireMonitor(req, res, next) {
   if (req.session?.isMonitor) return next();
+  res.status(401).json({ error: 'Não autorizado' });
+}
+function requireStudent(req, res, next) {
+  if (req.session?.studentId) return next();
   res.status(401).json({ error: 'Não autorizado' });
 }
 
@@ -294,8 +342,108 @@ app.get('/api/backup', requireMonitor, (req, res) => {
   res.json({ version: 3, createdAt: new Date().toISOString(), modules, questions: enriched });
 });
 
+// ── Alunos ────────────────────────────────────────────────
+app.post('/api/alunos/registro', photoUpload.single('foto'), (req, res) => {
+  const { username, password } = req.body;
+  if (!username?.trim() || !password)
+    return res.status(400).json({ error: 'Usuário e senha obrigatórios' });
+  if (db.prepare('SELECT id FROM students WHERE username=?').get(username.trim()))
+    return res.status(409).json({ error: 'Usuário já existe' });
+  const { hash, salt } = hashPassword(password);
+  const photoUrl = req.file ? `/uploads/${req.file.filename}` : '';
+  const r = db.prepare(
+    'INSERT INTO students (username, password_hash, password_salt, photo_url) VALUES (?,?,?,?)'
+  ).run(username.trim(), hash, salt, photoUrl);
+  req.session.studentId = Number(r.lastInsertRowid);
+  req.session.studentUsername = username.trim();
+  res.json({ ok: true, student: { id: Number(r.lastInsertRowid), username: username.trim(), photo_url: photoUrl } });
+});
+
+app.post('/api/alunos/login', (req, res) => {
+  const { username, password } = req.body;
+  const s = db.prepare('SELECT * FROM students WHERE username=?').get((username || '').trim());
+  if (!s || !verifyPassword(password || '', s.password_hash, s.password_salt))
+    return res.status(401).json({ error: 'Usuário ou senha incorretos' });
+  req.session.studentId = s.id;
+  req.session.studentUsername = s.username;
+  res.json({ ok: true, student: { id: s.id, username: s.username, photo_url: s.photo_url } });
+});
+
+app.post('/api/alunos/logout', (req, res) => {
+  delete req.session.studentId;
+  delete req.session.studentUsername;
+  res.json({ ok: true });
+});
+
+app.get('/api/alunos/me', (req, res) => {
+  if (!req.session?.studentId) return res.json({ student: null });
+  const s = db.prepare('SELECT id, username, photo_url FROM students WHERE id=?').get(req.session.studentId);
+  res.json({ student: s || null });
+});
+
+app.get('/api/alunos', requireMonitor, (req, res) => {
+  const rows = db.prepare(`
+    SELECT s.id, s.username, s.photo_url, s.created_at,
+           COUNT(CASE WHEN sr.correct = 1 THEN 1 END) as acertos,
+           COUNT(sr.id) as total
+    FROM students s
+    LEFT JOIN simulation_results sr ON sr.student_id = s.id
+    GROUP BY s.id
+    ORDER BY s.username ASC
+  `).all();
+  res.json(rows);
+});
+
+app.put('/api/alunos/:id', requireMonitor, photoUpload.single('foto'), (req, res) => {
+  const s = db.prepare('SELECT * FROM students WHERE id=?').get(req.params.id);
+  if (!s) return res.status(404).json({ error: 'Aluno não encontrado' });
+  const newUsername = (req.body.username || '').trim() || s.username;
+  if (newUsername !== s.username &&
+      db.prepare('SELECT id FROM students WHERE username=? AND id!=?').get(newUsername, req.params.id))
+    return res.status(409).json({ error: 'Usuário já existe' });
+  const photoUrl = req.file ? `/uploads/${req.file.filename}` : s.photo_url;
+  db.prepare('UPDATE students SET username=?, photo_url=? WHERE id=?').run(newUsername, photoUrl, req.params.id);
+  res.json(db.prepare('SELECT id, username, photo_url FROM students WHERE id=?').get(req.params.id));
+});
+
+app.delete('/api/alunos/:id', requireMonitor, (req, res) => {
+  const s = db.prepare('SELECT photo_url FROM students WHERE id=?').get(req.params.id);
+  if (s?.photo_url) deleteImageFile(s.photo_url);
+  db.prepare('DELETE FROM simulation_results WHERE student_id=?').run(req.params.id);
+  db.prepare('DELETE FROM students WHERE id=?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+// ── Resultados de simulação ───────────────────────────────
+app.post('/api/simulacao/resultado', requireStudent, (req, res) => {
+  const { resultados } = req.body;
+  if (!Array.isArray(resultados) || !resultados.length)
+    return res.status(400).json({ error: 'Resultados obrigatórios' });
+  const insert = db.prepare('INSERT INTO simulation_results (student_id, question_id, correct) VALUES (?,?,?)');
+  db.exec('BEGIN');
+  try {
+    for (const r of resultados) insert.run(req.session.studentId, r.question_id, r.correct ? 1 : 0);
+    db.exec('COMMIT');
+  } catch (e) { db.exec('ROLLBACK'); throw e; }
+  res.json({ ok: true });
+});
+
+// ── Ranking ───────────────────────────────────────────────
+app.get('/api/ranking', (req, res) => {
+  const ranking = db.prepare(`
+    SELECT s.id, s.username, s.photo_url,
+           COUNT(CASE WHEN sr.correct = 1 THEN 1 END) as acertos,
+           COUNT(sr.id) as total
+    FROM students s
+    LEFT JOIN simulation_results sr ON sr.student_id = s.id
+    GROUP BY s.id
+    ORDER BY acertos DESC, s.username ASC
+  `).all();
+  res.json(ranking);
+});
+
 // ── Páginas ───────────────────────────────────────────────
-['painel', 'simulacao', 'login'].forEach(page => {
+['painel', 'simulacao', 'login', 'aluno-login', 'ranking'].forEach(page => {
   app.get(`/${page}`, (_, res) =>
     res.sendFile(path.join(__dirname, `public/${page}.html`)));
 });

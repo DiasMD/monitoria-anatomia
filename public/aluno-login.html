@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acesso do Aluno — Anatomia UFMA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0A1F3D; --paper: #FAF7F0;
+  --gold: #B8924A; --gold-soft: #D4B47C;
+  --muted: rgba(212,180,124,0.65);
+  --rule: #D9D1BD; --error: #D6263A;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; font-family: 'Manrope', sans-serif;
+  background: var(--ink); color: var(--paper);
+  -webkit-font-smoothing: antialiased;
+}
+body {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 40px 24px;
+  background:
+    radial-gradient(ellipse at top center, rgba(184,146,74,0.12) 0%, transparent 55%),
+    var(--ink);
+}
+.page { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 440px; width: 100%; }
+.logo { width: 100px; height: 100px; object-fit: contain; margin-bottom: 24px; filter: drop-shadow(0 4px 20px rgba(0,0,0,0.55)); }
+.eyebrow { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold-soft); font-weight: 500; margin-bottom: 8px; }
+.title { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 600; line-height: 1.1; margin-bottom: 6px; }
+.title em { font-style: italic; color: var(--gold-soft); }
+.rule { width: 40px; height: 2px; background: var(--gold); margin: 18px auto 28px; opacity: 0.7; }
+
+/* Tabs */
+.tabs { display: flex; width: 100%; border: 1px solid rgba(184,146,74,0.25); border-radius: 3px; overflow: hidden; margin-bottom: 28px; }
+.tab { flex: 1; font-family: inherit; font-size: 13px; font-weight: 600; padding: 12px; background: transparent; color: var(--muted); border: none; cursor: pointer; transition: all 0.15s ease; letter-spacing: 0.05em; text-transform: uppercase; }
+.tab.active { background: var(--gold); color: var(--ink); }
+.tab:not(.active):hover { background: rgba(184,146,74,0.1); color: var(--gold-soft); }
+
+/* Form */
+.form { width: 100%; display: flex; flex-direction: column; gap: 14px; }
+.field { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.field label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--gold-soft); font-weight: 600; }
+.field input[type="text"], .field input[type="password"] {
+  font-family: inherit; font-size: 14px; padding: 12px 14px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(184,146,74,0.25);
+  border-radius: 2px; color: var(--paper);
+  transition: border-color 0.15s ease;
+}
+.field input:focus { outline: none; border-color: var(--gold); }
+.field input::placeholder { color: rgba(250,247,240,0.25); }
+
+/* Photo upload */
+.photo-zone {
+  display: flex; align-items: center; gap: 14px; padding: 14px;
+  border: 1px dashed rgba(184,146,74,0.3); border-radius: 2px; cursor: pointer;
+  transition: all 0.15s ease;
+}
+.photo-zone:hover { border-color: var(--gold); background: rgba(184,146,74,0.05); }
+.photo-preview {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(184,146,74,0.12); border: 1px solid rgba(184,146,74,0.25);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; overflow: hidden;
+}
+.photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.photo-text { text-align: left; }
+.photo-text .pt-main { font-size: 13px; font-weight: 500; }
+.photo-text .pt-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* Error msg */
+.error-msg { font-size: 12px; color: #ff7070; background: rgba(214,38,58,0.12); padding: 10px 14px; border-radius: 2px; border-left: 3px solid var(--error); display: none; text-align: left; }
+.error-msg.show { display: block; }
+
+/* Submit btn */
+.btn-submit {
+  font-family: inherit; font-size: 14px; font-weight: 600; padding: 14px;
+  background: var(--gold); color: var(--ink); border: none; border-radius: 2px;
+  cursor: pointer; letter-spacing: 0.05em; text-transform: uppercase;
+  transition: all 0.2s ease; margin-top: 4px;
+}
+.btn-submit:hover { background: var(--gold-soft); }
+.btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Skip link */
+.skip-link { margin-top: 22px; font-size: 12px; color: var(--muted); }
+.skip-link a { color: var(--muted); text-decoration: underline; cursor: pointer; transition: color 0.15s; }
+.skip-link a:hover { color: var(--gold-soft); }
+.back-link { margin-top: 12px; font-size: 12px; }
+.back-link a { color: rgba(212,180,124,0.5); text-decoration: none; }
+.back-link a:hover { color: var(--gold-soft); }
+</style>
+</head>
+<body>
+<div class="page">
+  <img class="logo" src="logo ufma.png" alt="Logo UFMA">
+  <div class="eyebrow">Universidade Federal do Maranhão · Medicina</div>
+  <h1 class="title">Acesso do <em>Aluno</em></h1>
+  <div class="rule"></div>
+
+  <div class="tabs">
+    <button class="tab active" id="tabLogin" onclick="switchTab('login')">Entrar</button>
+    <button class="tab" id="tabRegister" onclick="switchTab('register')">Criar conta</button>
+  </div>
+
+  <!-- LOGIN -->
+  <form class="form" id="loginForm" onsubmit="doLogin(event)">
+    <div class="field">
+      <label for="loginUser">Usuário</label>
+      <input type="text" id="loginUser" placeholder="Seu nome de usuário" autocomplete="username" required>
+    </div>
+    <div class="field">
+      <label for="loginPass">Senha</label>
+      <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" required>
+    </div>
+    <div class="error-msg" id="loginError"></div>
+    <button type="submit" class="btn-submit" id="loginBtn">Entrar</button>
+  </form>
+
+  <!-- REGISTER -->
+  <form class="form" id="registerForm" style="display:none" onsubmit="doRegister(event)">
+    <div class="field">
+      <label for="regUser">Usuário</label>
+      <input type="text" id="regUser" placeholder="Escolha um nome de usuário" autocomplete="username" required>
+    </div>
+    <div class="field">
+      <label for="regPass">Senha</label>
+      <input type="password" id="regPass" placeholder="Mínimo 6 caracteres" autocomplete="new-password" minlength="6" required>
+    </div>
+    <div class="field">
+      <label>Foto de perfil <span style="opacity:.5">(opcional)</span></label>
+      <div class="photo-zone" onclick="document.getElementById('photoInput').click()">
+        <div class="photo-preview" id="photoPreview">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold-soft)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
+        <div class="photo-text">
+          <div class="pt-main">Adicionar foto</div>
+          <div class="pt-sub">JPG ou PNG · máx. 5 MB</div>
+        </div>
+      </div>
+      <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="previewPhoto(this)">
+    </div>
+    <div class="error-msg" id="registerError"></div>
+    <button type="submit" class="btn-submit" id="registerBtn">Criar conta</button>
+  </form>
+
+  <div class="skip-link">
+    Prefere praticar sem conta? <a href="/simulacao">Continuar sem login →</a>
+  </div>
+  <div class="back-link"><a href="/">← Voltar ao início</a></div>
+</div>
+
+<script>
+function switchTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('tabLogin').classList.toggle('active', isLogin);
+  document.getElementById('tabRegister').classList.toggle('active', !isLogin);
+  document.getElementById('loginForm').style.display = isLogin ? 'flex' : 'none';
+  document.getElementById('registerForm').style.display = isLogin ? 'none' : 'flex';
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function hideError(id) { document.getElementById(id).classList.remove('show'); }
+
+function previewPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('photoPreview');
+    preview.innerHTML = `<img src="${e.target.result}" alt="foto">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function doLogin(e) {
+  e.preventDefault();
+  hideError('loginError');
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Entrando…';
+  try {
+    const res = await fetch('/api/alunos/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('loginUser').value,
+        password: document.getElementById('loginPass').value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showError('loginError', data.error || 'Erro ao entrar'); return; }
+    window.location.href = '/simulacao';
+  } catch {
+    showError('loginError', 'Erro de conexão. Tente novamente.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Entrar';
+  }
+}
+
+async function doRegister(e) {
+  e.preventDefault();
+  hideError('registerError');
+  const btn = document.getElementById('registerBtn');
+  btn.disabled = true; btn.textContent = 'Criando conta…';
+  try {
+    const form = new FormData();
+    form.append('username', document.getElementById('regUser').value);
+    form.append('password', document.getElementById('regPass').value);
+    const photoFile = document.getElementById('photoInput').files[0];
+    if (photoFile) form.append('foto', photoFile);
+
+    const res = await fetch('/api/alunos/registro', { method: 'POST', body: form });
+    const data = await res.json();
+    if (!res.ok) { showError('registerError', data.error || 'Erro ao criar conta'); return; }
+    window.location.href = '/simulacao';
+  } catch {
+    showError('registerError', 'Erro de conexão. Tente novamente.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Criar conta';
+  }
+}
+
+// Se já está logado, vai direto para simulação
+fetch('/api/alunos/me').then(r => r.json()).then(d => {
+  if (d.student) window.location.href = '/simulacao';
+});
+</script>
+</body>
+</html>
