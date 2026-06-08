@@ -447,6 +447,13 @@ app.post('/api/simulacao/resultado', requireStudent, (req, res) => {
   res.json({ ok: true });
 });
 
+app.get('/api/alunos/me/questoes-respondidas', requireStudent, (req, res) => {
+  const rows = db.prepare(
+    'SELECT DISTINCT question_id FROM simulation_results WHERE student_id=?'
+  ).all(req.session.studentId);
+  res.json(rows.map(r => r.question_id));
+});
+
 // ── Ranking ───────────────────────────────────────────────
 app.get('/api/ranking', (req, res) => {
   const ranking = db.prepare(`

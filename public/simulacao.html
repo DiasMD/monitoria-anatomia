@@ -66,7 +66,7 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
 /* PIN — seta SVG (sem estilos necessários; o SVG é inline) */
 
 /* PRESENTATION */
-.presentation { display:none; position:fixed; inset:0; background:#0a0a0a; z-index:200; flex-direction:column; }
+.presentation { display:none; position:fixed; inset:0; background:#0A1F3D; z-index:200; flex-direction:column; }
 .presentation.active { display:flex; }
 .pres-header { padding:14px 32px; background:rgba(10,10,10,0.95); border-bottom:1px solid rgba(184,146,74,0.25); display:flex; align-items:center; gap:20px; color:var(--paper); }
 .pres-emblem { width:48px; height:48px; object-fit:contain; }
@@ -150,6 +150,7 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
 
 /* SETUP SCREEN */
 .answer-mode-row { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom:32px; }
+.filter-section-label { font-size:11px; text-transform:uppercase; letter-spacing:0.15em; color:var(--muted); font-weight:600; margin-bottom:12px; }
 .answer-mode-opt { display:flex; align-items:flex-start; gap:10px; padding:16px 20px; border:2px solid var(--rule); border-radius:4px; cursor:pointer; transition:all 0.15s; max-width:240px; text-align:left; background:var(--paper); }
 .answer-mode-opt:hover { border-color:var(--gold); }
 .answer-mode-opt.selected { border-color:var(--ink); background:rgba(10,31,61,0.04); }
@@ -309,6 +310,31 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
     </label>
   </div>
 
+  <div class="filter-section-label">Filtro de questões</div>
+  <div class="answer-mode-row" style="margin-bottom:24px">
+    <label class="answer-mode-opt selected" id="filterAll">
+      <input type="radio" name="questionFilter" value="all" checked>
+      <div>
+        <div class="opt-label">Todas</div>
+        <div class="opt-desc" id="filterAllCount">0 questões</div>
+      </div>
+    </label>
+    <label class="answer-mode-opt" id="filterUnseen">
+      <input type="radio" name="questionFilter" value="unseen">
+      <div>
+        <div class="opt-label">Não respondidas</div>
+        <div class="opt-desc" id="filterUnseenCount">0 questões</div>
+      </div>
+    </label>
+    <label class="answer-mode-opt" id="filterSeen">
+      <input type="radio" name="questionFilter" value="seen">
+      <div>
+        <div class="opt-label">Já respondidas</div>
+        <div class="opt-desc" id="filterSeenCount">0 questões</div>
+      </div>
+    </label>
+  </div>
+
   <div class="setup-time-row">
     <label for="timeInput">Tempo por questão</label>
     <input type="number" id="timeInput" value="60" min="5" max="600" step="5">
@@ -371,10 +397,6 @@ html, body { height: 100%; font-family: 'Manrope', sans-serif; background: var(-
       Próxima
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
-    <button class="pres-btn" id="fullscreenBtn">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Tela cheia
-    </button>
     <button class="pres-btn danger" id="exitBtn">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Encerrar
@@ -426,8 +448,11 @@ const state = {
   currentPresIdx: 0, timer: null, answerTimer: null,
   remaining: 0, paused: false, showingAnswer: false,
   student: null,
-  resultados: [],    // [{question_id, correct}] acumulados na sessão
+  resultados: [],
   waitingEval: false,
+  allModuleQuestions: [],
+  answeredIds: new Set(),
+  questionFilter: 'all',
 };
 
 function $(id) { return document.getElementById(id); }
@@ -441,6 +466,38 @@ async function checkStudentSession() {
     state.student = student;
     renderStudentBadge();
   } catch {}
+}
+
+async function loadAnsweredIds() {
+  if (state.student) {
+    try {
+      const res = await fetch('/api/alunos/me/questoes-respondidas');
+      if (res.ok) { state.answeredIds = new Set(await res.json()); return; }
+    } catch {}
+  }
+  try {
+    const saved = JSON.parse(localStorage.getItem('anatomia_vistas') || '[]');
+    state.answeredIds = new Set(saved);
+  } catch { state.answeredIds = new Set(); }
+}
+
+function updateFilterUI() {
+  const all    = state.allModuleQuestions.length;
+  const seen   = state.allModuleQuestions.filter(q => state.answeredIds.has(q.id)).length;
+  const unseen = all - seen;
+  $('filterAllCount').textContent    = `${all} questão${all !== 1 ? 'ões' : ''}`;
+  $('filterUnseenCount').textContent = `${unseen} questão${unseen !== 1 ? 'ões' : ''}`;
+  $('filterSeenCount').textContent   = `${seen} questão${seen !== 1 ? 'ões' : ''}`;
+}
+
+function applyFilter() {
+  const f = state.questionFilter;
+  let qs = state.allModuleQuestions;
+  if (f === 'unseen') qs = qs.filter(q => !state.answeredIds.has(q.id));
+  else if (f === 'seen') qs = qs.filter(q => state.answeredIds.has(q.id));
+  state.questions = qs;
+  $('questCount').textContent = qs.length;
+  $('startBtn').disabled = qs.length === 0;
 }
 
 function renderStudentBadge() {
@@ -665,9 +722,15 @@ $('msContinueBtn').addEventListener('click', () => {
   showSetup(filtered);
 });
 
-function showSetup(questions) {
-  state.questions = questions;
-  $('questCount').textContent    = questions.length;
+async function showSetup(questions) {
+  state.allModuleQuestions = questions;
+  state.questionFilter = 'all';
+  document.querySelector('input[name="questionFilter"][value="all"]').checked = true;
+  ['filterAll','filterUnseen','filterSeen'].forEach(id => $( id ).classList.remove('selected'));
+  $('filterAll').classList.add('selected');
+  await loadAnsweredIds();
+  updateFilterUI();
+  applyFilter();
   $('setupScreen').style.display = 'flex';
 }
 
@@ -677,6 +740,17 @@ document.querySelectorAll('input[name="answerMode"]').forEach(radio => {
     state.answerMode = radio.value;
     $('modeImmediate').classList.toggle('selected', radio.value === 'immediate');
     $('modeEndList').classList.toggle('selected', radio.value === 'endlist');
+  });
+});
+
+// Filtro de questões
+document.querySelectorAll('input[name="questionFilter"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    state.questionFilter = radio.value;
+    $('filterAll').classList.toggle('selected', radio.value === 'all');
+    $('filterUnseen').classList.toggle('selected', radio.value === 'unseen');
+    $('filterSeen').classList.toggle('selected', radio.value === 'seen');
+    applyFilter();
   });
 });
 
@@ -799,11 +873,6 @@ function updatePauseBtn() {
   else { icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'; label.textContent = 'Pausar'; }
 }
 
-function toggleFullscreen() {
-  if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
-  else document.exitFullscreen().catch(()=>{});
-}
-
 function exitPresentation() {
   stopTimer(); clearTimeout(state.answerTimer);
   $('presentation').classList.remove('active');
@@ -816,6 +885,13 @@ async function endSimulation() {
   setEvalMode(false);
   $('presentation').classList.remove('active');
   if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+
+  // Marca questões como vistas no localStorage (para alunos não logados)
+  try {
+    const ids = state.questions.map(q => q.id);
+    const prev = JSON.parse(localStorage.getItem('anatomia_vistas') || '[]');
+    localStorage.setItem('anatomia_vistas', JSON.stringify([...new Set([...prev, ...ids])]));
+  } catch {}
 
   if (state.answerMode === 'endlist') {
     const q = state.questions[state.currentPresIdx];
@@ -897,7 +973,6 @@ $('hintBtn').addEventListener('click', () => {
   $('hintReveal').style.display = '';
 });
 $('pauseBtn').addEventListener('click', togglePause);
-$('fullscreenBtn').addEventListener('click', toggleFullscreen);
 $('exitBtn').addEventListener('click', () => { if (confirm('Encerrar a simulação?')) exitPresentation(); });
 $('restartBtn').addEventListener('click', () => { $('endScreen').classList.remove('active'); startPresentation(); });
 $('backBtn').addEventListener('click', () => { window.location.href = '/'; });
@@ -907,7 +982,6 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); nextQuestion(); }
   else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prevQuestion(); }
   else if (e.key === ' ') { e.preventDefault(); togglePause(); }
-  else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFullscreen(); }
   else if (e.key === 'Escape' && !document.fullscreenElement) {
     if (confirm('Encerrar a simulação?')) exitPresentation();
   }
